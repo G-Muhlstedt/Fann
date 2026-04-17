@@ -34,7 +34,9 @@
         
         /* CARTÕES DE RESULTADO */
         .card-resultado { position: relative; background-color: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid var(--cor-primaria); box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.3s; }
-        .card-resultado h3 { margin-top: 0; color: #333; font-size: 16px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        .cabecalho-modelo { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        .cabecalho-modelo h3 { margin: 0; color: #333; font-size: 16px; border-bottom: none; padding-bottom: 0; }
+        .equacao-modelo { margin-left: auto; color: #666; font-size: 13px; font-weight: 500; text-align: right; white-space: nowrap; }
         .card-resultado p { font-size: 15px; margin: 8px 0; color: #555; display: flex; justify-content: space-between; }
         .destaque { font-weight: bold; color: var(--cor-primaria); font-size: 16px; }
         
@@ -48,6 +50,8 @@
         .card-resultado.vencedor h3 { color: #d84315; }
         .selo-vencedor { display: none; position: absolute; top: 12px; right: 15px; font-size: 12px; background: var(--cor-destaque); color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
         .card-resultado.vencedor .selo-vencedor { display: block; }
+        .card-resultado.vencedor .cabecalho-modelo { padding-top: 18px; }
+        .card-resultado.vencedor .equacao-modelo { color: #d84315; }
         .card-resultado.vencedor .destaque, .card-resultado.vencedor .destaque-estat { color: #d84315; }
 
         /* BOTÕES DE SELEÇÃO MÚLTIPLA E CORES */
@@ -84,6 +88,26 @@
         
         .aviso { color: #dc3545; font-weight: bold; text-align: center; margin-top: 10px; display: none; }
         .observacao-ajuste { margin-top: 12px; padding: 10px 12px; background-color: #fff8e1; border-left: 4px solid #ff9800; border-radius: 4px; color: #6d4c41; font-size: 13px; display: none; }
+    
+    
+        .gammadot{
+            position: relative;
+            display: inline-block;
+            line-height: 1;
+        }
+
+        .gammadot .dot{
+            position: absolute;
+            top: -0.3em;
+            left: 40%;
+            transform: translateX(50%);
+            font-size: 0.5em;
+        }
+
+        .equacao-modelo{
+            font-family: Cambria Math, Cambria, serif;
+        }
+        
     </style>
 </head>
 <body>
@@ -125,7 +149,14 @@
                 
                 <div class="card-resultado" id="card-newtoniano">
                     <span class="selo-vencedor">Recomendado</span>
-                    <h3>Newtoniano (Média)</h3>
+                    <div class="cabecalho-modelo">
+                        <h3>Newtoniano (Média)</h3>
+                        <span class="equacao-modelo">
+                            <i>&tau; = &mu; &middot;
+                            <span class="gammadot">
+                                &gamma;<span class="dot">•</span></i>
+                            </span>
+                    </div>
                     <p>Viscosidade (μ): <span><span id="resMu" class="destaque">0</span> <strong>Pa·s</strong></span></p>
                     <div class="bloco-estatisticas">
                         <p>R²: <span id="r2-newtoniano" class="destaque-estat">0.0000</span></p>
@@ -136,7 +167,14 @@
 
                 <div class="card-resultado" id="card-bingham">
                     <span class="selo-vencedor">Recomendado</span>
-                    <h3>Bingham Plástico</h3>
+                    <div class="cabecalho-modelo">
+                        <h3>Bingham Plástico</h3>
+                        <span class="equacao-modelo">
+                            <i>&tau; = &tau;<sub>0</sub> + &eta; &middot;
+                            <span class="gammadot">
+                                &gamma;<span class="dot">•</span></i>
+                            </span>
+                    </div>
                     <p>Visc. Plástica (PV): <span><span id="resPV" class="destaque">0</span> <strong>Pa·s</strong></span></p>
                     <p>Escoamento (YP): <span><span id="resYP" class="destaque">0</span> <strong>Pa</strong></span></p>
                     <div class="bloco-estatisticas">
@@ -148,7 +186,14 @@
 
                 <div class="card-resultado" id="card-powerlaw">
                     <span class="selo-vencedor">Recomendado</span>
-                    <h3>Lei das Potências</h3>
+                    <div class="cabecalho-modelo">
+                        <h3>Lei das Potências</h3>
+                        <span class="equacao-modelo">   
+                            <i>&tau; = K &middot; 
+                            <span class="gammadot">
+                                &gamma;<span class="dot">•</span>
+                            </span> <sup>n</sup></span></i>
+                    </div>
                     <p>Índice (n): <span><span id="resN" class="destaque">0</span></span></p>
                     <p>Consistência (K): <span><span id="resK" class="destaque">0</span> <strong>Pa·sⁿ</strong></span></p>
                     <div class="bloco-estatisticas">
@@ -160,7 +205,14 @@
 
                 <div class="card-resultado" id="card-hb">
                     <span class="selo-vencedor">Recomendado</span>
-                    <h3>Herschel-Bulkley</h3>
+                    <div class="cabecalho-modelo">
+                        <h3>Herschel-Bulkley</h3>
+                        <span class="equacao-modelo">
+                            <i>&tau; = &tau;<sub>0</sub> + &eta; &middot;
+                            <span class="gammadot">
+                                &gamma;<span class="dot">•</span>
+                            </span> <sup>n</sup></span></i>
+                    </div>
                     <p>Tensão Inicial (τ₀): <span><span id="resTau0" class="destaque">0</span> <strong>Pa</strong></span></p>
                     <p>Índice (n): <span><span id="resNhb" class="destaque">0</span></span></p>
                     <p>Consist. (K): <span><span id="resKhb" class="destaque">0</span> <strong>Pa·sⁿ</strong></span></p>
@@ -834,7 +886,7 @@
         XLSX.utils.book_append_sheet(wb, wsDados, "Dados Lidos");
         XLSX.utils.book_append_sheet(wb, wsModelos, "Análise e Parâmetros");
         
-        XLSX.writeFile(wb, "Relatorio_Reologia_CERM.xlsx");
+        XLSX.writeFile(wb, "Relatorio_Reologia_CERNN.xlsx");
     }
 
     window.onload = mudarConfiguracaoEquip;
