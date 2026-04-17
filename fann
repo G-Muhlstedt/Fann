@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>CERNN Rheology - Análise Relógica de Fluidos</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        :root {
+            --cor-primaria: #001ee1; /* Azul Personalizado CERNN */
+            --cor-destaque: #ff9800; /* Laranja/Dourado para o vencedor */
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f0f2f5; }
+        .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        h2 { color: #333; font-size: 1.2em; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        
+        .seletor-modelo { background-color: #e9ecef; padding: 15px; border-radius: 6px; margin-bottom: 25px; border-left: 4px solid #28a745; display: flex; align-items: center; gap: 15px; }
+        .seletor-modelo label { width: auto; font-size: 16px; color: #333; }
+        .seletor-modelo select { font-size: 16px; padding: 6px 10px; font-weight: bold; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; }
+
+        .grid-principal { display: grid; grid-template-columns: 300px 1fr; gap: 30px; }
+        .grid-resultados { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        .input-group { margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; background: #fafafa; padding: 5px 10px; border-radius: 4px; border: 1px solid #eeeeee; }
+        .input-group label { font-weight: bold; color: #444; width: 80px; }
+        .input-group input { padding: 6px; width: 80px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; font-size: 15px; background-color: #fff; }
+        .input-group input:placeholder-shown { border: 2px dashed #ff9800; background-color: #fff8e1; }
+        
+        .vel-extra { background-color: #fff3cd; border-color: #ffeeba; display: none; }
+        
+        /* CARTÕES DE RESULTADO */
+        .card-resultado { position: relative; background-color: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid var(--cor-primaria); box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.3s; }
+        .card-resultado h3 { margin-top: 0; color: #333; font-size: 16px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        .card-resultado p { font-size: 15px; margin: 8px 0; color: #555; display: flex; justify-content: space-between; }
+        .destaque { font-weight: bold; color: var(--cor-primaria); font-size: 16px; }
+        
+        /* BLOCO ESTATÍSTICO */
+        .bloco-estatisticas { margin-top: 12px; padding-top: 8px; border-top: 1px dashed #ccc; font-size: 13px; color: #666; }
+        .bloco-estatisticas p { margin: 4px 0; display: flex; justify-content: space-between; font-size: 13px; }
+        .destaque-estat { font-weight: bold; color: #444; }
+
+        /* ESTILO DO MODELO VENCEDOR */
+        .card-resultado.vencedor { border-left: 6px solid var(--cor-destaque) !important; background-color: #fffcf5; box-shadow: 0 4px 10px rgba(255,152,0,0.15); transform: scale(1.02); }
+        .card-resultado.vencedor h3 { color: #d84315; }
+        .selo-vencedor { display: none; position: absolute; top: 12px; right: 15px; font-size: 12px; background: var(--cor-destaque); color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
+        .card-resultado.vencedor .selo-vencedor { display: block; }
+        .card-resultado.vencedor .destaque, .card-resultado.vencedor .destaque-estat { color: #d84315; }
+
+        /* BOTÕES DE SELEÇÃO MÚLTIPLA E CORES */
+        .header-grafico { display: flex; align-items: center; justify-content: space-between; margin-top: 35px; margin-bottom: 10px; border-bottom: 3px solid var(--cor-primaria); padding-bottom: 10px; }
+        .header-grafico h1 { color: #1a1a1a; font-size: 24px; margin: 0; }
+        .botoes-modelo { display: flex; gap: 8px; flex-wrap: wrap;}
+        
+        .btn-toggle { padding: 6px 14px; cursor: pointer; background-color: #f8f9fa; color: #555; border: 2px solid #ddd; border-radius: 20px; font-size: 14px; font-weight: bold; transition: 0.2s; }
+        .btn-toggle:hover { filter: brightness(0.95); }
+        
+        .btn-pontos.ativo { background-color: #444444; color: white; border-color: #444444; }
+        .btn-newton.ativo { background-color: #00a878; color: white; border-color: #00a878; }
+        .btn-bingham.ativo { background-color: #f5a623; color: white; border-color: #f5a623; }
+        .btn-powerlaw.ativo { background-color: #e12d2d; color: white; border-color: #e12d2d; }
+        .btn-hb.ativo { background-color: #001ee1; color: white; border-color: #001ee1; }
+        
+        /* BARRA DE EIXOS FLUTUANTE */
+        .barra-eixos { display: flex; justify-content: flex-end; margin-bottom: -40px; position: relative; z-index: 10; }
+        .controles-escala-grupo { background: #e9ecef; padding: 8px 15px; border-radius: 6px; display: flex; align-items: center; gap: 15px; font-size: 14px; color: #333; }
+        .controles-escala { display: flex; align-items: center; gap: 8px; }
+        button.btn-escala { padding: 4px 10px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 4px; transition: 0.2s; font-size: 13px;}
+        button.btn-escala.ativo { background-color: var(--cor-primaria); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        
+        /* HEADER DA TABELA */
+        .header-tabela { display: flex; align-items: center; justify-content: space-between; margin-top: 45px; margin-bottom: 10px; border-bottom: 3px solid var(--cor-primaria); padding-bottom: 10px; }
+        .header-tabela h2 { border-bottom: none; padding-bottom: 0; margin: 0; font-size: 20px;}
+        .btn-exportar { background-color: #28a745; color: white; font-size: 14px; padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-exportar:hover { background-color: #218838; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background-color: var(--cor-primaria); color: white; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        
+        .aviso { color: #dc3545; font-weight: bold; text-align: center; margin-top: 10px; display: none; }
+        .observacao-ajuste { margin-top: 12px; padding: 10px 12px; background-color: #fff8e1; border-left: 4px solid #ff9800; border-radius: 4px; color: #6d4c41; font-size: 13px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <img src="banner.png" alt="CERNN Rheology" style="width: 100%; max-width: 1200px; display: block; margin: 0 auto 25px auto;">
+    
+    <div class="seletor-modelo">
+        <label for="tipoFann"><strong>Configuração do Equipamento:</strong></label>
+        <select id="tipoFann" onchange="mudarConfiguracaoEquip()">
+            <option value="6">6 Velocidades</option>
+            <option value="12" selected>12 Velocidades (Completo)</option>
+        </select>
+        <span style="font-size: 13px; color: #555;">(Deixe em branco os campos fora de escala)</span>
+    </div>
+
+    <div class="grid-principal">
+        <div>
+            <h2>Leituras (Dial)</h2>
+            <div class="input-group"><label>600 RPM:</label> <input type="number" id="L600" placeholder="-" oninput="calcularTudo()"></div>
+            <div class="input-group"><label>300 RPM:</label> <input type="number" id="L300" value="280" oninput="calcularTudo()"></div>
+            <div class="input-group"><label>200 RPM:</label> <input type="number" id="L200" value="190" oninput="calcularTudo()"></div>
+            <div class="input-group vel-extra"><label>180 RPM:</label> <input type="number" id="L180" value="175" oninput="calcularTudo()"></div>
+            <div class="input-group"><label>100 RPM:</label> <input type="number" id="L100" value="100" oninput="calcularTudo()"></div>
+            <div class="input-group vel-extra"><label>90 RPM:</label> <input type="number" id="L90" value="90" oninput="calcularTudo()"></div>
+            <div class="input-group vel-extra"><label>60 RPM:</label> <input type="number" id="L60" value="65" oninput="calcularTudo()"></div>
+            <div class="input-group vel-extra"><label>30 RPM:</label> <input type="number" id="L30" value="35" oninput="calcularTudo()"></div>
+            <div class="input-group"><label>6 RPM:</label> <input type="number" id="L6" value="12" oninput="calcularTudo()"></div>
+            <div class="input-group"><label>3 RPM:</label> <input type="number" id="L3" value="10" oninput="calcularTudo()"></div>
+            <div class="input-group vel-extra"><label>1,8 RPM:</label> <input type="number" id="L1_8" value="8" oninput="calcularTudo()"></div>
+            <div class="input-group vel-extra"><label>0,9 RPM:</label> <input type="number" id="L0_9" value="7" oninput="calcularTudo()"></div>
+        </div>
+
+        <div>
+            <h2>Ajuste Estatístico de Modelos (SI)</h2>
+            <div id="avisoErro" class="aviso">São necessários pelo menos 5 pontos para calcular o AICc!</div>
+            <div class="grid-resultados" id="areaResultados">
+                
+                <div class="card-resultado" id="card-newtoniano">
+                    <span class="selo-vencedor">Recomendado</span>
+                    <h3>Newtoniano (Média)</h3>
+                    <p>Viscosidade (μ): <span><span id="resMu" class="destaque">0</span> <strong>Pa·s</strong></span></p>
+                    <div class="bloco-estatisticas">
+                        <p>R²: <span id="r2-newtoniano" class="destaque-estat">0.0000</span></p>
+                        <p>R² Ajustado: <span id="r2adj-newtoniano" class="destaque-estat">0.0000</span></p>
+                        <p>AICc: <span id="aicc-newtoniano" class="destaque-estat">0.00</span></p> 
+                    </div>
+                </div>
+
+                <div class="card-resultado" id="card-bingham">
+                    <span class="selo-vencedor">Recomendado</span>
+                    <h3>Bingham Plástico</h3>
+                    <p>Visc. Plástica (PV): <span><span id="resPV" class="destaque">0</span> <strong>Pa·s</strong></span></p>
+                    <p>Escoamento (YP): <span><span id="resYP" class="destaque">0</span> <strong>Pa</strong></span></p>
+                    <div class="bloco-estatisticas">
+                        <p>R²: <span id="r2-bingham" class="destaque-estat">0.0000</span></p>
+                        <p>R² Ajustado: <span id="r2adj-bingham" class="destaque-estat">0.0000</span></p>
+                        <p>AICc: <span id="aicc-bingham" class="destaque-estat">0.00</span></p>
+                    </div>
+                </div>
+
+                <div class="card-resultado" id="card-powerlaw">
+                    <span class="selo-vencedor">Recomendado</span>
+                    <h3>Lei das Potências</h3>
+                    <p>Índice (n): <span><span id="resN" class="destaque">0</span></span></p>
+                    <p>Consistência (K): <span><span id="resK" class="destaque">0</span> <strong>Pa·sⁿ</strong></span></p>
+                    <div class="bloco-estatisticas">
+                        <p>R²: <span id="r2-powerlaw" class="destaque-estat">0.0000</span></p>
+                        <p>R² Ajustado: <span id="r2adj-powerlaw" class="destaque-estat">0.0000</span></p>
+                        <p>AICc: <span id="aicc-powerlaw" class="destaque-estat">0.00</span></p>
+                    </div>
+                </div>
+
+                <div class="card-resultado" id="card-hb">
+                    <span class="selo-vencedor">Recomendado</span>
+                    <h3>Herschel-Bulkley</h3>
+                    <p>Tensão Inicial (τ₀): <span><span id="resTau0" class="destaque">0</span> <strong>Pa</strong></span></p>
+                    <p>Índice (n): <span><span id="resNhb" class="destaque">0</span></span></p>
+                    <p>Consist. (K): <span><span id="resKhb" class="destaque">0</span> <strong>Pa·sⁿ</strong></span></p>
+                    <div class="bloco-estatisticas">
+                        <p>R²: <span id="r2-hb" class="destaque-estat">0.0000</span></p>
+                        <p>R² Ajustado: <span id="r2adj-hb" class="destaque-estat">0.0000</span></p>
+                        <p>AICc: <span id="aicc-hb" class="destaque-estat">0.00</span></p>
+                    </div>
+                </div>
+            </div>
+            <div id="notaMelhorAjuste" class="observacao-ajuste"></div>
+        </div>
+    </div>
+
+    <div class="header-grafico">
+        <h1>Análise Gráfica</h1>
+        <div class="botoes-modelo">
+            <button id="btn-toggle-pontos" class="btn-toggle btn-pontos ativo" onclick="alternarCurva('pontos')">Dados Lidos</button>
+            <button id="btn-toggle-newtoniano" class="btn-toggle btn-newton" onclick="alternarCurva('newtoniano')">Newtoniano</button>
+            <button id="btn-toggle-bingham" class="btn-toggle btn-bingham" onclick="alternarCurva('bingham')">Bingham</button>
+            <button id="btn-toggle-powerlaw" class="btn-toggle btn-powerlaw" onclick="alternarCurva('powerlaw')">Power-law</button>
+            <button id="btn-toggle-hb" class="btn-toggle btn-hb" onclick="alternarCurva('hb')">Herschel-Bulkley</button>
+        </div>
+    </div>
+
+    <div class="barra-eixos">
+        <div class="controles-escala-grupo">
+            <div class="controles-escala">
+                <strong>Eixo X (Taxa):</strong>
+                <button id="btn-x-linear" class="btn-escala ativo" onclick="mudarEscala('x', 'linear')">Linear</button>
+                <button id="btn-x-logarithmic" class="btn-escala" onclick="mudarEscala('x', 'logarithmic')">Log</button>
+            </div>
+            <div class="controles-escala">
+                <strong>Eixo Y (Tensão):</strong>
+                <button id="btn-y-linear" class="btn-escala ativo" onclick="mudarEscala('y', 'linear')">Linear</button>
+                <button id="btn-y-logarithmic" class="btn-escala" onclick="mudarEscala('y', 'logarithmic')">Log</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="meuGrafico" height="120"></canvas>
+
+    <div class="header-tabela">
+        <h2>Tabela de Dados (SI)</h2>
+        <button class="btn-exportar" onclick="exportarExcel()">📥 Exportar para Excel</button>
+    </div>
+    
+    <table id="tabelaDados">
+        <thead>
+            <tr>
+                <th>RPM</th>
+                <th>Leitura</th>
+                <th>Taxa [s⁻¹]</th>
+                <th>Tensão [Pa]</th>
+                <th>Viscosidade [Pa·s]</th>
+            </tr>
+        </thead>
+        <tbody id="corpoTabela"></tbody>
+    </table>
+</div>
+
+<script>
+    let graficoReologia;
+    let escalaX = 'linear';
+    let escalaY = 'linear';
+    
+    // GERENCIADOR DE ESTADO DAS CURVAS (Múltipla Seleção)
+    let curvasAtivas = {
+        pontos: true, 
+        newtoniano: false, 
+        bingham: false, 
+        powerlaw: false, 
+        hb: false
+    };
+
+    const FATOR_TAXA = 1.703;
+    const FATOR_TENSAO_PA = 1.067 * 0.4788; 
+    
+    const ROTACOES_6 = [600, 300, 200, 100, 6, 3];
+    const ROTACOES_12 = [600, 300, 200, 180, 100, 90, 60, 30, 6, 3, 1.8, 0.9];
+    let rotacoesAtuais = ROTACOES_12;
+
+    const TOL_N_QUASE_LINEAR = 0.03;
+    const DELTA_AICC_MINIMO_RECLASSIFICACAO = 2.0;
+
+    let paramsModelos = { mu: 0, pv: 0, yp: 0, n_pl: 0, k_pl: 0, tau0: 0, n_hb: 0, k_hb: 0 };
+    let dadosPontosReais = [];
+    let taxaMaximaLida = 1022; 
+
+    function montarObservacaoReclassificacao(modeloOriginal, modeloRecomendado, n, deltaAicc) {
+        let motivos = [];
+
+        if (Math.abs(n - 1) <= TOL_N_QUASE_LINEAR) {
+            motivos.push(`n = ${n.toFixed(3)} proximo de 1`);
+        }
+
+        if (deltaAicc < DELTA_AICC_MINIMO_RECLASSIFICACAO) {
+            motivos.push(`delta AICc = ${deltaAicc.toFixed(2)} (< ${DELTA_AICC_MINIMO_RECLASSIFICACAO.toFixed(1)})`);
+        }
+
+        if (motivos.length === 0) {
+            return '';
+        }
+
+        return `${modeloOriginal} reclassificado como ${modeloRecomendado}: ${motivos.join(' e ')}.`;
+    }
+
+    function decidirMelhorModelo(rankingValido, statNewton, statBingham, statPower, statHB, params) {
+        if (rankingValido.length === 0) {
+            return { vencedorId: null, observacao: '' };
+        }
+
+        let vencedorId = rankingValido[0].id;
+        let observacao = '';
+
+        if (vencedorId === 'card-hb' && statBingham.aicc !== Infinity && statHB.aicc !== Infinity) {
+            let deltaAicc = statBingham.aicc - statHB.aicc;
+            let observacaoHB = montarObservacaoReclassificacao('HB', 'Bingham', params.n_hb, deltaAicc);
+
+            if (observacaoHB) {
+                vencedorId = 'card-bingham';
+                observacao = observacaoHB;
+            }
+        } else if (vencedorId === 'card-powerlaw' && statNewton.aicc !== Infinity && statPower.aicc !== Infinity) {
+            let deltaAicc = statNewton.aicc - statPower.aicc;
+            let observacaoPL = montarObservacaoReclassificacao('Power-law', 'Newtoniano', params.n_pl, deltaAicc);
+
+            if (observacaoPL) {
+                vencedorId = 'card-newtoniano';
+                observacao = observacaoPL;
+            }
+        }
+
+        return { vencedorId: vencedorId, observacao: observacao };
+    }
+
+    function regressaoLinear(x, y) {
+        let n = x.length;
+        if (n === 0) return { slope: 0, intercept: 0 };
+        if (n === 1) return { slope: 0, intercept: y[0] };
+        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+        for (let i = 0; i < n; i++) { sumX += x[i]; sumY += y[i]; sumXY += x[i] * y[i]; sumXX += x[i] * x[i]; }
+        let slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        let intercept = (sumY - slope * sumX) / n;
+        return { slope: slope, intercept: intercept };
+    }
+
+    function calcularErroQuadratico(yReais, yPreditos) {
+        let ssRes = 0;
+        for (let i = 0; i < yReais.length; i++) {
+            ssRes += Math.pow(yReais[i] - yPreditos[i], 2);
+        }
+        return ssRes;
+    }
+
+    function ajustarNewtoniano(x, y) {
+        let sumXY = 0;
+        let sumXX = 0;
+
+        for (let i = 0; i < x.length; i++) {
+            sumXY += x[i] * y[i];
+            sumXX += x[i] * x[i];
+        }
+
+        let mu = sumXX === 0 ? 0 : sumXY / sumXX;
+        let yPred = x.map(valorX => mu * valorX);
+
+        return { mu: mu, yPred: yPred, sse: calcularErroQuadratico(y, yPred) };
+    }
+
+    function calcularKPowerLaw(x, y, n) {
+        let sumPhiY = 0;
+        let sumPhi2 = 0;
+
+        for (let i = 0; i < x.length; i++) {
+            let phi = Math.pow(x[i], n);
+            sumPhiY += phi * y[i];
+            sumPhi2 += phi * phi;
+        }
+
+        if (sumPhi2 === 0) return 0;
+        return Math.max(0, sumPhiY / sumPhi2);
+    }
+
+    function avaliarPowerLaw(x, y, n) {
+        let k = calcularKPowerLaw(x, y, n);
+        let yPred = x.map(valorX => k * Math.pow(valorX, n));
+        return { n: n, k: k, yPred: yPred, sse: calcularErroQuadratico(y, yPred) };
+    }
+
+    // Busca numerica simples para manter o ajuste no espaco linear de tensao.
+    function ajustarPowerLaw(x, y) {
+        let melhor = null;
+        let nMin = 0.01;
+        let nMax = 2.50;
+
+        for (let iter = 0; iter < 5; iter++) {
+            let passo = (nMax - nMin) / 60;
+
+            for (let i = 0; i <= 60; i++) {
+                let n = nMin + i * passo;
+                let ajuste = avaliarPowerLaw(x, y, n);
+                if (!melhor || ajuste.sse < melhor.sse) {
+                    melhor = ajuste;
+                }
+            }
+
+            if (passo <= 0) break;
+            nMin = Math.max(0.001, melhor.n - passo);
+            nMax = melhor.n + passo;
+        }
+
+        return melhor || { n: 0, k: 0, yPred: x.map(() => 0), sse: Infinity };
+    }
+
+    function calcularKHB(x, y, tau0, n) {
+        let sumPhiY = 0;
+        let sumPhi2 = 0;
+
+        for (let i = 0; i < x.length; i++) {
+            let phi = Math.pow(x[i], n);
+            sumPhiY += phi * (y[i] - tau0);
+            sumPhi2 += phi * phi;
+        }
+
+        if (sumPhi2 === 0) return 0;
+        return Math.max(0, sumPhiY / sumPhi2);
+    }
+
+    function avaliarHerschelBulkley(x, y, tau0, n) {
+        let k = calcularKHB(x, y, tau0, n);
+        let yPred = x.map(valorX => tau0 + k * Math.pow(valorX, n));
+        return { tau0: tau0, n: n, k: k, yPred: yPred, sse: calcularErroQuadratico(y, yPred) };
+    }
+
+    function ajustarExpoenteHB(x, y, tau0) {
+        let melhor = null;
+        let nMin = 0.01;
+        let nMax = 2.50;
+
+        for (let iter = 0; iter < 5; iter++) {
+            let passo = (nMax - nMin) / 60;
+
+            for (let i = 0; i <= 60; i++) {
+                let n = nMin + i * passo;
+                let ajuste = avaliarHerschelBulkley(x, y, tau0, n);
+                if (!melhor || ajuste.sse < melhor.sse) {
+                    melhor = ajuste;
+                }
+            }
+
+            if (passo <= 0) break;
+            nMin = Math.max(0.001, melhor.n - passo);
+            nMax = melhor.n + passo;
+        }
+
+        return melhor;
+    }
+
+    function ajustarHerschelBulkley(x, y) {
+        let menorTensao = Math.min(...y);
+        let melhor = null;
+        let tauMin = 0;
+        let tauMax = Math.max(0, menorTensao * 0.999);
+
+        if (tauMax === 0) {
+            return { tau0: 0, n: 0, k: 0, yPred: x.map(() => 0), sse: Infinity };
+        }
+
+        for (let iter = 0; iter < 4; iter++) {
+            let passoTau = (tauMax - tauMin) / 40;
+
+            for (let i = 0; i <= 40; i++) {
+                let tau0 = tauMin + i * passoTau;
+                let ajuste = ajustarExpoenteHB(x, y, tau0);
+                if (!melhor || ajuste.sse < melhor.sse) {
+                    melhor = ajuste;
+                }
+            }
+
+            if (passoTau <= 0) break;
+            tauMin = Math.max(0, melhor.tau0 - passoTau);
+            tauMax = Math.min(menorTensao * 0.999, melhor.tau0 + passoTau);
+        }
+
+        return melhor || { tau0: 0, n: 0, k: 0, yPred: x.map(() => 0), sse: Infinity };
+    }
+
+    function calcularEstatisticasRigorosas(yReais, yPreditos, k) {
+        let n = yReais.length;
+        if (n <= k + 1) return { r2: 0, r2Adj: 0, aicc: Infinity }; 
+
+        let somaY = 0;
+        for(let i=0; i<n; i++) somaY += yReais[i];
+        let mediaY = somaY / n;
+
+        let ssTot = 0;
+        let ssRes = 0;
+        for(let i=0; i<n; i++) {
+            ssTot += Math.pow(yReais[i] - mediaY, 2);
+            ssRes += Math.pow(yReais[i] - yPreditos[i], 2);
+        }
+
+        let r2 = ssTot === 0 ? 1 : 1 - (ssRes / ssTot);
+        let r2Adj = ssTot === 0 ? 1 : 1 - ((ssRes / (n - k)) / (ssTot / (n - 1)));
+
+        let aic = 0;
+        if (ssRes > 0) {
+            aic = n * Math.log(ssRes / n) + 2 * k;
+        } else {
+            aic = -999;
+        }
+
+        let aicc = aic + (2 * k * (k + 1)) / (n - k - 1);
+
+        return {
+            r2: r2 < 0 ? 0 : r2,
+            r2Adj: r2Adj < 0 ? 0 : r2Adj,
+            aicc: aicc
+        };
+    }
+
+    function mudarConfiguracaoEquip() {
+        let tipo = document.getElementById('tipoFann').value;
+        let extras = document.querySelectorAll('.vel-extra');
+        if (tipo === "6") {
+            rotacoesAtuais = ROTACOES_6;
+            extras.forEach(el => el.style.display = 'none');
+        } else {
+            rotacoesAtuais = ROTACOES_12;
+            extras.forEach(el => el.style.display = 'flex');
+        }
+        calcularTudo();
+    }
+
+    // Função que acende/apaga os botões e atualiza o gráfico
+    function alternarCurva(modelo) {
+        curvasAtivas[modelo] = !curvasAtivas[modelo]; 
+        let btn = document.getElementById('btn-toggle-' + modelo);
+        btn.classList.toggle('ativo', curvasAtivas[modelo]); 
+        atualizarGraficoComCurvas(); 
+    }
+
+    function calcularTudo() {
+        let pontosValidos = [];
+        taxaMaximaLida = 0;
+        let notaMelhorAjuste = document.getElementById('notaMelhorAjuste');
+        
+        rotacoesAtuais.forEach((rpm) => {
+            let idCampo = 'L' + rpm.toString().replace('.', '_');
+            let valorTexto = document.getElementById(idCampo).value;
+            
+            if (valorTexto !== "" && Number(valorTexto) > 0) {
+                let leitura = Number(valorTexto);
+                let taxa = rpm * FATOR_TAXA;
+                if(taxa > taxaMaximaLida) taxaMaximaLida = taxa;
+
+                pontosValidos.push({
+                    rpm: rpm, dial: leitura, taxa: taxa, tensao: leitura * FATOR_TENSAO_PA,
+                    viscosidade: (leitura * FATOR_TENSAO_PA) / taxa
+                });
+            }
+        });
+
+        if (pontosValidos.length < 5) {
+            document.getElementById('avisoErro').style.display = 'block';
+            document.getElementById('areaResultados').style.opacity = '0.3';
+            notaMelhorAjuste.style.display = 'none';
+            notaMelhorAjuste.innerText = '';
+            return;
+        } else {
+            document.getElementById('avisoErro').style.display = 'none';
+            document.getElementById('areaResultados').style.opacity = '1';
+        }
+
+        let yReais = pontosValidos.map(p => p.tensao);
+        let xReais = pontosValidos.map(p => p.taxa);
+
+        // 1. Newtoniano
+        let ajusteNewton = ajustarNewtoniano(xReais, yReais);
+        paramsModelos.mu = ajusteNewton.mu;
+        document.getElementById('resMu').innerText = paramsModelos.mu.toFixed(4);
+        
+        let yNewton = ajusteNewton.yPred;
+        let statNewton = calcularEstatisticasRigorosas(yReais, yNewton, 1);
+        document.getElementById('r2-newtoniano').innerText = statNewton.r2.toFixed(4);
+        document.getElementById('r2adj-newtoniano').innerText = statNewton.r2Adj.toFixed(4);
+        document.getElementById('aicc-newtoniano').innerText = statNewton.aicc.toFixed(2);
+
+        // 2. Bingham
+        let regBingham = regressaoLinear(xReais, yReais);
+        paramsModelos.pv = regBingham.slope;
+        paramsModelos.yp = regBingham.intercept;
+        document.getElementById('resPV').innerText = paramsModelos.pv.toFixed(4);
+        document.getElementById('resYP').innerText = paramsModelos.yp.toFixed(2);
+        
+        let yBingham = xReais.map(x => paramsModelos.yp + paramsModelos.pv * x);
+        let statBingham = calcularEstatisticasRigorosas(yReais, yBingham, 2);
+        document.getElementById('r2-bingham').innerText = statBingham.r2.toFixed(4);
+        document.getElementById('r2adj-bingham').innerText = statBingham.r2Adj.toFixed(4);
+        document.getElementById('aicc-bingham').innerText = statBingham.aicc.toFixed(2);
+
+        // 3. Power-law
+        let ajustePL = ajustarPowerLaw(xReais, yReais);
+        paramsModelos.n_pl = ajustePL.n;
+        paramsModelos.k_pl = ajustePL.k;
+        document.getElementById('resN').innerText = paramsModelos.n_pl.toFixed(3);
+        document.getElementById('resK').innerText = paramsModelos.k_pl.toFixed(4);
+
+        let yPower = ajustePL.yPred;
+        let statPower = calcularEstatisticasRigorosas(yReais, yPower, 2);
+        document.getElementById('r2-powerlaw').innerText = statPower.r2.toFixed(4);
+        document.getElementById('r2adj-powerlaw').innerText = statPower.r2Adj.toFixed(4);
+        document.getElementById('aicc-powerlaw').innerText = statPower.aicc.toFixed(2);
+
+        // 4. Herschel-Bulkley
+        let ajusteHB = ajustarHerschelBulkley(xReais, yReais);
+        paramsModelos.tau0 = ajusteHB.tau0;
+        paramsModelos.n_hb = ajusteHB.n;
+        paramsModelos.k_hb = ajusteHB.k;
+        document.getElementById('resTau0').innerText = paramsModelos.tau0.toFixed(2);
+        document.getElementById('resNhb').innerText = paramsModelos.n_hb.toFixed(3);
+        document.getElementById('resKhb').innerText = paramsModelos.k_hb.toFixed(4);
+
+        let yHB = ajusteHB.yPred;
+        let statHB = calcularEstatisticasRigorosas(yReais, yHB, 3);
+        document.getElementById('r2-hb').innerText = statHB.r2.toFixed(4);
+        document.getElementById('r2adj-hb').innerText = statHB.r2Adj.toFixed(4);
+        document.getElementById('aicc-hb').innerText = statHB.aicc.toFixed(2);
+
+        // RANKING E VENCEDOR
+        let ranking = [
+            { id: 'card-newtoniano', aicc: statNewton.aicc },
+            { id: 'card-bingham', aicc: statBingham.aicc },
+            { id: 'card-powerlaw', aicc: statPower.aicc },
+            { id: 'card-hb', aicc: statHB.aicc }
+        ];
+        
+        let rankingValido = ranking.filter(m => m.aicc !== Infinity);
+        rankingValido.sort((a, b) => a.aicc - b.aicc); 
+        let decisaoMelhorModelo = decidirMelhorModelo(rankingValido, statNewton, statBingham, statPower, statHB, paramsModelos);
+        
+        document.querySelectorAll('.card-resultado').forEach(card => card.classList.remove('vencedor'));
+        if (decisaoMelhorModelo.vencedorId) {
+            document.getElementById(decisaoMelhorModelo.vencedorId).classList.add('vencedor');
+        }
+
+        if (decisaoMelhorModelo.observacao) {
+            notaMelhorAjuste.innerText = decisaoMelhorModelo.observacao;
+            notaMelhorAjuste.style.display = 'block';
+        } else {
+            notaMelhorAjuste.style.display = 'none';
+            notaMelhorAjuste.innerText = '';
+        }
+
+        dadosPontosReais = [];
+        let htmlTabela = "";
+
+        pontosValidos.forEach((p) => {
+            htmlTabela += `<tr>
+                <td><strong>${p.rpm.toString().replace('.', ',')}</strong></td>
+                <td>${p.dial}</td>
+                <td>${p.taxa.toFixed(2).replace('.', ',')}</td>
+                <td>${p.tensao.toFixed(2).replace('.', ',')}</td>
+                <td>${p.viscosidade.toFixed(4).replace('.', ',')}</td>
+            </tr>`;
+            dadosPontosReais.push({ x: p.taxa, y: p.tensao });
+        });
+
+        document.getElementById('corpoTabela').innerHTML = htmlTabela;
+        dadosPontosReais.sort((a, b) => a.x - b.x); 
+        
+        atualizarGraficoComCurvas();
+    }
+
+    function gerarLinhaTeoricaEspecifica(modelo) {
+        let linha = [];
+        let step = (taxaMaximaLida * 1.1) / 100;
+        for (let x = 1; x <= taxaMaximaLida * 1.1; x += step) {
+            let y = 0;
+            if (modelo === 'newtoniano') y = paramsModelos.mu * x;
+            else if (modelo === 'bingham') y = paramsModelos.yp + (paramsModelos.pv * x);
+            else if (modelo === 'powerlaw') y = paramsModelos.k_pl * Math.pow(x, paramsModelos.n_pl);
+            else if (modelo === 'hb') y = paramsModelos.tau0 + paramsModelos.k_hb * Math.pow(x, paramsModelos.n_hb);
+            if (y > 0) linha.push({ x: x, y: y });
+        }
+        return linha;
+    }
+
+    function atualizarGraficoComCurvas() {
+        let ctx = document.getElementById('meuGrafico').getContext('2d');
+        if (graficoReologia) graficoReologia.destroy();
+
+        let datasets = [];
+
+        // MAGIA DA BOLINHA VAZADA E DAS MÚLTIPLAS CURVAS
+        if (curvasAtivas.pontos) {
+            datasets.push({
+                label: 'Dados Lidos',
+                data: dadosPontosReais,
+                borderColor: '#444444',         /* Borda cinza escuro */
+                backgroundColor: 'transparent', /* Fundo transparente (vazado) */
+                borderWidth: 2,                 /* Espessura da borda da bolinha */
+                type: 'scatter',
+                showLine: false, 
+                tension: 0,
+                pointRadius: 5,                 /* Tamanho mais delicado */
+                pointHoverRadius: 7,
+                pointStyle: 'circle' 
+            });
+        }
+
+        if (curvasAtivas.newtoniano) {
+            datasets.push({ label: 'Newtoniano', data: gerarLinhaTeoricaEspecifica('newtoniano'), borderColor: '#00a878', borderWidth: 2, type: 'line', pointRadius: 0, tension: 0.1, pointStyle: 'line' });
+        }
+        if (curvasAtivas.bingham) {
+            datasets.push({ label: 'Bingham', data: gerarLinhaTeoricaEspecifica('bingham'), borderColor: '#f5a623', borderWidth: 2, type: 'line', pointRadius: 0, tension: 0.1, pointStyle: 'line' });
+        }
+        if (curvasAtivas.powerlaw) {
+            datasets.push({ label: 'Power-law', data: gerarLinhaTeoricaEspecifica('powerlaw'), borderColor: '#e12d2d', borderWidth: 2, type: 'line', pointRadius: 0, tension: 0.1, pointStyle: 'line' });
+        }
+        if (curvasAtivas.hb) {
+            datasets.push({ label: 'Herschel-Bulkley', data: gerarLinhaTeoricaEspecifica('hb'), borderColor: '#001ee1', borderWidth: 2, type: 'line', pointRadius: 0, tension: 0.1, pointStyle: 'line' });
+        }
+
+        graficoReologia = new Chart(ctx, {
+            data: { datasets: datasets },
+            options: {
+                scales: {
+                    x: { type: escalaX, title: { display: true, text: 'Taxa de Cisalhamento (s⁻¹)', font: {weight: 'bold'} } },
+                    y: { type: escalaY, title: { display: true, text: 'Tensão de Cisalhamento (Pa)', font: {weight: 'bold'} } }
+                },
+                plugins: { 
+                    legend: { 
+                        position: 'top', 
+                        align: 'start',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 15, 
+                            boxHeight: 8,
+                            padding: 25   
+                        }
+                    } 
+                }
+            },
+            plugins: [{
+                beforeInit: function(chart) {
+                    const ajusteOriginal = chart.legend.fit;
+                    chart.legend.fit = function fit() {
+                        ajusteOriginal.bind(chart.legend)();
+                        this.height += 30; 
+                    };
+                }
+            }]
+        });
+    }
+
+    function mudarEscala(eixo, tipo) {
+        if (eixo === 'x') {
+            escalaX = tipo;
+            document.getElementById('btn-x-linear').classList.toggle('ativo', tipo === 'linear');
+            document.getElementById('btn-x-logarithmic').classList.toggle('ativo', tipo === 'logarithmic');
+        }
+        if (eixo === 'y') {
+            escalaY = tipo;
+            document.getElementById('btn-y-linear').classList.toggle('ativo', tipo === 'linear');
+            document.getElementById('btn-y-logarithmic').classList.toggle('ativo', tipo === 'logarithmic');
+        }
+        atualizarGraficoComCurvas();
+    }
+
+    function exportarExcel() {
+        let dadosBrutos = [];
+        
+        rotacoesAtuais.forEach((rpm) => {
+            let idCampo = 'L' + rpm.toString().replace('.', '_');
+            let valorTexto = document.getElementById(idCampo).value;
+            
+            if (valorTexto !== "" && Number(valorTexto) > 0) {
+                let leitura = Number(valorTexto);
+                let taxa = rpm * FATOR_TAXA;
+                let tensao = leitura * FATOR_TENSAO_PA;
+                let viscosidade = tensao / taxa;
+                
+                dadosBrutos.push({
+                    "Rotação (RPM)": rpm,
+                    "Leitura (Dial)": leitura,
+                    "Taxa de Cisalhamento [s⁻¹]": Number(taxa.toFixed(2)),
+                    "Tensão [Pa]": Number(tensao.toFixed(2)),
+                    "Viscosidade [Pa·s]": Number(viscosidade.toFixed(4))
+                });
+            }
+        });
+
+        if (dadosBrutos.length === 0) {
+            alert("Preencha alguns dados antes de exportar.");
+            return;
+        }
+
+        let getNum = (id) => {
+            let val = Number(document.getElementById(id).innerText);
+            return isNaN(val) ? "-" : val;
+        };
+        let checarVencedor = (id) => document.getElementById(id).classList.contains('vencedor') ? "Vencedor" : "";
+
+        let dadosModelos = [
+            {
+                "Modelo": "Newtoniano",
+                "Status": checarVencedor('card-newtoniano'),
+                "R²": getNum('r2-newtoniano'),
+                "R² Ajustado": getNum('r2adj-newtoniano'),
+                "AICc": getNum('aicc-newtoniano'),
+                "μ [Pa·s]": getNum('resMu'),
+                "PV [Pa·s]": "-",
+                "YP [Pa]": "-",
+                "Índice (n)": "-",
+                "Consistência (K)": "-",
+                "Tensão Inic. (τ₀)": "-"
+            },
+            {
+                "Modelo": "Bingham Plástico",
+                "Status": checarVencedor('card-bingham'),
+                "R²": getNum('r2-bingham'),
+                "R² Ajustado": getNum('r2adj-bingham'),
+                "AICc": getNum('aicc-bingham'),
+                "μ [Pa·s]": "-",
+                "PV [Pa·s]": getNum('resPV'),
+                "YP [Pa]": getNum('resYP'),
+                "Índice (n)": "-",
+                "Consistência (K)": "-",
+                "Tensão Inic. (τ₀)": "-"
+            },
+            {
+                "Modelo": "Lei das Potências",
+                "Status": checarVencedor('card-powerlaw'),
+                "R²": getNum('r2-powerlaw'),
+                "R² Ajustado": getNum('r2adj-powerlaw'),
+                "AICc": getNum('aicc-powerlaw'),
+                "μ [Pa·s]": "-",
+                "PV [Pa·s]": "-",
+                "YP [Pa]": "-",
+                "Índice (n)": getNum('resN'),
+                "Consistência (K)": getNum('resK'),
+                "Tensão Inic. (τ₀)": "-"
+            },
+            {
+                "Modelo": "Herschel-Bulkley",
+                "Status": checarVencedor('card-hb'),
+                "R²": getNum('r2-hb'),
+                "R² Ajustado": getNum('r2adj-hb'),
+                "AICc": getNum('aicc-hb'),
+                "μ [Pa·s]": "-",
+                "PV [Pa·s]": "-",
+                "YP [Pa]": "-",
+                "Índice (n)": getNum('resNhb'),
+                "Consistência (K)": getNum('resKhb'),
+                "Tensão Inic. (τ₀)": getNum('resTau0')
+            }
+        ];
+
+        let wsDados = XLSX.utils.json_to_sheet(dadosBrutos);
+        wsDados['!cols'] = [ { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 25 }, { wch: 20 } ];
+
+        let wsModelos = XLSX.utils.json_to_sheet(dadosModelos);
+        wsModelos['!cols'] = [
+            { wch: 20 }, { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, 
+            { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 18 }, { wch: 20 }
+        ];
+
+        let wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, wsDados, "Dados Lidos");
+        XLSX.utils.book_append_sheet(wb, wsModelos, "Análise e Parâmetros");
+        
+        XLSX.writeFile(wb, "Relatorio_Reologia_CERM.xlsx");
+    }
+
+    window.onload = mudarConfiguracaoEquip;
+</script>
+
+</body>
+</html>
