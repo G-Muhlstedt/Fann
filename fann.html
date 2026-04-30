@@ -2,101 +2,471 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>CERNN Rheology - Análise Relógica de Fluidos</title>
-    
+    <title>CERNN Rheology - Análise Reológica de Fluidos</title>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
+
     <style>
         :root {
-            --cor-primaria: #001ee1; /* Azul Personalizado CERNN */
-            --cor-destaque: #ff9800; /* Laranja/Dourado para o vencedor */
+            --cor-primaria: #001ee1;
+            --cor-destaque: #ff9800;
         }
 
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f0f2f5; }
-        .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        
-        h2 { color: #333; font-size: 1.2em; border-bottom: 2px solid #eee; padding-bottom: 5px; }
-        
-        .seletor-modelo { background-color: #e9ecef; padding: 15px; border-radius: 6px; margin-bottom: 25px; border-left: 4px solid #28a745; display: flex; align-items: center; gap: 15px; }
-        .seletor-modelo label { width: auto; font-size: 16px; color: #333; }
-        .seletor-modelo select { font-size: 16px; padding: 6px 10px; font-weight: bold; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f0f2f5;
+        }
 
-        .grid-principal { display: grid; grid-template-columns: 300px 1fr; gap: 30px; }
-        .grid-resultados { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        
-        .input-group { margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; background: #fafafa; padding: 5px 10px; border-radius: 4px; border: 1px solid #eeeeee; }
-        .input-group label { font-weight: bold; color: #444; width: 80px; }
-        .input-group input { padding: 6px; width: 80px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; font-size: 15px; background-color: #fff; }
-        .input-group input:placeholder-shown { border: 2px dashed #ff9800; background-color: #fff8e1; }
-        
-        .vel-extra { background-color: #fff3cd; border-color: #ffeeba; display: none; }
-        
-        /* CARTÕES DE RESULTADO */
-        .card-resultado { position: relative; background-color: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid var(--cor-primaria); box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.3s; }
-        .cabecalho-modelo { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
-        .cabecalho-modelo h3 { margin: 0; color: #333; font-size: 16px; border-bottom: none; padding-bottom: 0; }
-        .equacao-modelo { margin-left: auto; color: #666; font-size: 13px; font-weight: 500; text-align: right; white-space: nowrap; }
-        .card-resultado p { font-size: 15px; margin: 8px 0; color: #555; display: flex; justify-content: space-between; }
-        .destaque { font-weight: bold; color: var(--cor-primaria); font-size: 16px; }
-        
-        /* BLOCO ESTATÍSTICO */
-        .bloco-estatisticas { margin-top: 12px; padding-top: 8px; border-top: 1px dashed #ccc; font-size: 13px; color: #666; }
-        .bloco-estatisticas p { margin: 4px 0; display: flex; justify-content: space-between; font-size: 13px; }
-        .destaque-estat { font-weight: bold; color: #444; }
+        .container {
+            max-width: 1150px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
 
-        /* ESTILO DO MODELO VENCEDOR */
-        .card-resultado.vencedor { border-left: 6px solid var(--cor-destaque) !important; background-color: #fffcf5; box-shadow: 0 4px 10px rgba(255,152,0,0.15); transform: scale(1.02); }
-        .card-resultado.vencedor h3 { color: #d84315; }
-        .selo-vencedor { display: none; position: absolute; top: 12px; right: 15px; font-size: 12px; background: var(--cor-destaque); color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
-        .card-resultado.vencedor .selo-vencedor { display: block; }
-        .card-resultado.vencedor .cabecalho-modelo { padding-top: 18px; }
-        .card-resultado.vencedor .equacao-modelo { color: #d84315; }
-        .card-resultado.vencedor .destaque, .card-resultado.vencedor .destaque-estat { color: #d84315; }
+        h2 {
+            color: #333;
+            font-size: 1.2em;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
 
-        /* BOTÕES DE SELEÇÃO MÚLTIPLA E CORES */
-        .header-grafico { display: flex; align-items: center; justify-content: space-between; margin-top: 35px; margin-bottom: 10px; border-bottom: 3px solid var(--cor-primaria); padding-bottom: 10px; }
-        .header-grafico h1 { color: #1a1a1a; font-size: 24px; margin: 0; }
-        .botoes-modelo { display: flex; gap: 8px; flex-wrap: wrap;}
-        
-        .btn-toggle { padding: 6px 14px; cursor: pointer; background-color: #f8f9fa; color: #555; border: 2px solid #ddd; border-radius: 20px; font-size: 14px; font-weight: bold; transition: 0.2s; }
-        .btn-toggle:hover { filter: brightness(0.95); }
-        
-        .btn-pontos.ativo { background-color: #444444; color: white; border-color: #444444; }
-        .btn-newton.ativo { background-color: #00a878; color: white; border-color: #00a878; }
-        .btn-bingham.ativo { background-color: #f5a623; color: white; border-color: #f5a623; }
-        .btn-powerlaw.ativo { background-color: #e12d2d; color: white; border-color: #e12d2d; }
-        .btn-hb.ativo { background-color: #001ee1; color: white; border-color: #001ee1; }
-        
-        /* BARRA DE EIXOS FLUTUANTE */
-        .barra-eixos { display: flex; justify-content: flex-end; margin-bottom: -40px; position: relative; z-index: 10; }
-        .controles-escala-grupo { background: #e9ecef; padding: 8px 15px; border-radius: 6px; display: flex; align-items: center; gap: 15px; font-size: 14px; color: #333; }
-        .controles-escala { display: flex; align-items: center; gap: 8px; }
-        button.btn-escala { padding: 4px 10px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 4px; transition: 0.2s; font-size: 13px;}
-        button.btn-escala.ativo { background-color: var(--cor-primaria); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        
-        /* HEADER DA TABELA */
-        .header-tabela { display: flex; align-items: center; justify-content: space-between; margin-top: 45px; margin-bottom: 10px; border-bottom: 3px solid var(--cor-primaria); padding-bottom: 10px; }
-        .header-tabela h2 { border-bottom: none; padding-bottom: 0; margin: 0; font-size: 20px;}
-        .btn-exportar { background-color: #28a745; color: white; font-size: 14px; padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-exportar:hover { background-color: #218838; }
+        .navegacao-paginas {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
 
-        table { width: 100%; border-collapse: collapse; font-size: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-        th { background-color: var(--cor-primaria); color: white; }
-        tr:nth-child(even) { background-color: #f8f9fa; }
-        
-        .aviso { color: #dc3545; font-weight: bold; text-align: center; margin-top: 10px; display: none; }
-        .observacao-ajuste { margin-top: 12px; padding: 10px 12px; background-color: #fff8e1; border-left: 4px solid #ff9800; border-radius: 4px; color: #6d4c41; font-size: 13px; display: none; }
-    
-    
-        .gammadot{
+        .btn-pagina {
+            padding: 10px 18px;
+            cursor: pointer;
+            background-color: #6c757d;
+            color: #f8f9fa;
+            border: 2px solid #6c757d;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-pagina.ativo {
+            background-color: var(--cor-primaria);
+            border: 2px solid var(--cor-primaria);
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,30,225,0.2);
+        }
+
+        .pagina-analise {
+            display: none;
+        }
+
+        .pagina-analise.ativa {
+            display: block;
+        }
+
+        .seletor-modelo {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            border-left: 4px solid #28a745;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .seletor-modelo label {
+            width: auto;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .seletor-modelo select {
+            font-size: 16px;
+            padding: 6px 10px;
+            font-weight: bold;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+
+        .grid-principal {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+        }
+
+        .grid-resultados {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fafafa;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #eeeeee;
+        }
+
+        .input-group label {
+            font-weight: bold;
+            color: #444;
+            width: 80px;
+        }
+
+        .input-group input {
+            padding: 6px;
+            width: 80px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 15px;
+            background-color: #fff;
+        }
+
+        .input-group input:placeholder-shown,
+        .tabela-comparativa input:placeholder-shown {
+            border: 2px dashed #ff9800;
+            background-color: #fff8e1;
+        }
+
+        .vel-extra {
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+            display: none;
+        }
+
+        .card-resultado {
+            position: relative;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid var(--cor-primaria);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: 0.3s;
+        }
+
+        .cabecalho-modelo {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .cabecalho-modelo h3 {
+            margin: 0;
+            color: #333;
+            font-size: 16px;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .equacao-modelo {
+            margin-left: auto;
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: right;
+            white-space: nowrap;
+            font-family: Cambria Math, Cambria, serif;
+        }
+
+        .card-resultado p {
+            font-size: 15px;
+            margin: 8px 0;
+            color: #555;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .destaque {
+            font-weight: bold;
+            color: var(--cor-primaria);
+            font-size: 16px;
+        }
+
+        .bloco-estatisticas {
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px dashed #ccc;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .bloco-estatisticas p {
+            margin: 4px 0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+
+        .destaque-estat {
+            font-weight: bold;
+            color: #444;
+        }
+
+        .card-resultado.vencedor {
+            border-left: 6px solid var(--cor-destaque) !important;
+            background-color: #fffcf5;
+            box-shadow: 0 4px 10px rgba(255,152,0,0.15);
+            transform: scale(1.02);
+        }
+
+        .card-resultado.vencedor h3 {
+            color: #d84315;
+        }
+
+        .selo-vencedor {
+            display: none;
+            position: absolute;
+            top: 12px;
+            right: 15px;
+            font-size: 12px;
+            background: var(--cor-destaque);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        .card-resultado.vencedor .selo-vencedor {
+            display: block;
+        }
+
+        .card-resultado.vencedor .cabecalho-modelo {
+            padding-top: 18px;
+        }
+
+        .card-resultado.vencedor .equacao-modelo,
+        .card-resultado.vencedor .destaque,
+        .card-resultado.vencedor .destaque-estat {
+            color: #d84315;
+        }
+
+        .header-grafico {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 35px;
+            margin-bottom: 10px;
+            border-bottom: 3px solid var(--cor-primaria);
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .header-grafico h1 {
+            color: #1a1a1a;
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .botoes-modelo {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-toggle {
+            padding: 6px 14px;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            color: #555;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-toggle:hover,
+        .btn-pagina:hover,
+        .btn-acao:hover,
+        .btn-exportar:hover,
+        .btn-escala:hover {
+            filter: brightness(0.95);
+        }
+
+        .btn-pontos.ativo {
+            background-color: #444444;
+            color: white;
+            border-color: #444444;
+        }
+
+        .btn-newton.ativo {
+            background-color: #00a878;
+            color: white;
+            border-color: #00a878;
+        }
+
+        .btn-bingham.ativo {
+            background-color: #f5a623;
+            color: white;
+            border-color: #f5a623;
+        }
+
+        .btn-powerlaw.ativo {
+            background-color: #e12d2d;
+            color: white;
+            border-color: #e12d2d;
+        }
+
+        .btn-hb.ativo {
+            background-color: #001ee1;
+            color: white;
+            border-color: #001ee1;
+        }
+
+        .barra-eixos {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: -40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .controles-escala-grupo {
+            background: #e9ecef;
+            padding: 8px 15px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+            color: #333;
+            flex-wrap: wrap;
+        }
+
+        .controles-escala {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        button.btn-escala {
+            padding: 4px 10px;
+            cursor: pointer;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: 0.2s;
+            font-size: 13px;
+        }
+
+        button.btn-escala.ativo {
+            background-color: var(--cor-primaria);
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header-tabela {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 45px;
+            margin-bottom: 10px;
+            border-bottom: 3px solid var(--cor-primaria);
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .header-tabela h2 {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .btn-exportar,
+        .btn-acao {
+            background-color: #28a745;
+            color: white;
+            font-size: 14px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-acao-secundaria {
+            background-color: #e12d2d;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #ddd;
+            color: rgb(0, 0, 0);
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .aviso {
+            color: #dc3545;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .observacao-ajuste {
+            margin-top: 12px;
+            padding: 10px 12px;
+            background-color: #fff8e1;
+            border-left: 4px solid #ff9800;
+            border-radius: 4px;
+            color: #6d4c41;
+            font-size: 13px;
+            display: none;
+        }
+
+        .gammadot {
             position: relative;
             display: inline-block;
             line-height: 1;
         }
 
-        .gammadot .dot{
+        .gammadot .dot {
             position: absolute;
             top: -0.3em;
             left: 40%;
@@ -104,193 +474,351 @@
             font-size: 0.5em;
         }
 
-        .equacao-modelo{
-            font-family: Cambria Math, Cambria, serif;
+        .toolbar-comparativo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
         }
-        
+
+        .toolbar-comparativo h2 {
+            margin: 0;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .grupo-acoes-comparativo {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .info-comparativo {
+            margin: 0 0 15px 0;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .tabela-comparativa input {
+            width: 90px;
+            max-width: 100%;
+            padding: 6px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-weight: bold;
+            background-color: #fff;
+        }
+
+        .rotulo-amostra {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: bold;
+        }
+
+        .marcador-cor {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            flex: 0 0 auto;
+        }
+
+        .modelo-fixo {
+            padding: 7px 12px;
+            border-radius: 8px;
+            background-color: #e9ecef;
+            color: #333;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .status-ok {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .status-alerta {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        @media (max-width: 900px) {
+            .grid-principal,
+            .grid-resultados {
+                grid-template-columns: 1fr;
+            }
+
+            .barra-eixos {
+                margin-bottom: 10px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                margin: 10px;
+            }
+
+            .container {
+                padding: 18px;
+            }
+
+            .header-grafico h1 {
+                font-size: 20px;
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    
     <img src="banner.png" alt="CERNN Rheology" style="width: 100%; max-width: 1200px; display: block; margin: 0 auto 25px auto;">
-    
+
+    <div class="navegacao-paginas">
+        <button id="btn-pagina-individual" class="btn-pagina ativo" onclick="mostrarPagina('individual')">1. Análise Individual</button>
+        <button id="btn-pagina-comparativo" class="btn-pagina" onclick="mostrarPagina('comparativo')">2. Comparativo de Curvas</button>
+    </div>
+
     <div class="seletor-modelo">
-        <label for="tipoFann"><strong>Configuração do Equipamento:</strong></label>
+        <label for="tipoFann"><strong>Configuracao do Equipamento:</strong></label>
         <select id="tipoFann" onchange="mudarConfiguracaoEquip()">
             <option value="6">6 Velocidades</option>
-            <option value="12" selected>12 Velocidades (Completo)</option>
+            <option value="12" selected>12 Velocidades</option>
         </select>
-        <span style="font-size: 13px; color: #555;">(Deixe em branco os campos fora de escala)</span>
+        <span style="font-size: 13px; color: #555;">(Deixe em branco os campos fora de escala.)</span>
     </div>
 
-    <div class="grid-principal">
-        <div>
-            <h2>Leituras (Dial)</h2>
-            <div class="input-group"><label>600 RPM:</label> <input type="number" id="L600" placeholder="-" oninput="calcularTudo()"></div>
-            <div class="input-group"><label>300 RPM:</label> <input type="number" id="L300" value="280" oninput="calcularTudo()"></div>
-            <div class="input-group"><label>200 RPM:</label> <input type="number" id="L200" value="190" oninput="calcularTudo()"></div>
-            <div class="input-group vel-extra"><label>180 RPM:</label> <input type="number" id="L180" value="175" oninput="calcularTudo()"></div>
-            <div class="input-group"><label>100 RPM:</label> <input type="number" id="L100" value="100" oninput="calcularTudo()"></div>
-            <div class="input-group vel-extra"><label>90 RPM:</label> <input type="number" id="L90" value="90" oninput="calcularTudo()"></div>
-            <div class="input-group vel-extra"><label>60 RPM:</label> <input type="number" id="L60" value="65" oninput="calcularTudo()"></div>
-            <div class="input-group vel-extra"><label>30 RPM:</label> <input type="number" id="L30" value="35" oninput="calcularTudo()"></div>
-            <div class="input-group"><label>6 RPM:</label> <input type="number" id="L6" value="12" oninput="calcularTudo()"></div>
-            <div class="input-group"><label>3 RPM:</label> <input type="number" id="L3" value="10" oninput="calcularTudo()"></div>
-            <div class="input-group vel-extra"><label>1,8 RPM:</label> <input type="number" id="L1_8" value="8" oninput="calcularTudo()"></div>
-            <div class="input-group vel-extra"><label>0,9 RPM:</label> <input type="number" id="L0_9" value="7" oninput="calcularTudo()"></div>
-        </div>
+    <section id="pagina-individual" class="pagina-analise ativa">
+        <div class="grid-principal">
+            <div>
+                <h2>Leituras (Dial)</h2>
+                <div class="input-group"><label>600 RPM:</label> <input type="number" id="L600" value="60" oninput="calcularTudo()"></div>
+                <div class="input-group"><label>300 RPM:</label> <input type="number" id="L300" value="48" oninput="calcularTudo()"></div>
+                <div class="input-group"><label>200 RPM:</label> <input type="number" id="L200" value="43" oninput="calcularTudo()"></div>
+                <div class="input-group vel-extra"><label>180 RPM:</label> <input type="number" id="L180" value="41" oninput="calcularTudo()"></div>
+                <div class="input-group"><label>100 RPM:</label> <input type="number" id="L100" value="36" oninput="calcularTudo()"></div>
+                <div class="input-group vel-extra"><label>90 RPM:</label> <input type="number" id="L90" value="36" oninput="calcularTudo()"></div>
+                <div class="input-group vel-extra"><label>60 RPM:</label> <input type="number" id="L60" value="33" oninput="calcularTudo()"></div>
+                <div class="input-group vel-extra"><label>30 RPM:</label> <input type="number" id="L30" value="29" oninput="calcularTudo()"></div>
+                <div class="input-group"><label>6 RPM:</label> <input type="number" id="L6" value="24" oninput="calcularTudo()"></div>
+                <div class="input-group"><label>3 RPM:</label> <input type="number" id="L3" value="22" oninput="calcularTudo()"></div>
+                <div class="input-group vel-extra"><label>1,8 RPM:</label> <input type="number" id="L1_8" value="21" oninput="calcularTudo()"></div>
+                <div class="input-group vel-extra"><label>0,9 RPM:</label> <input type="number" id="L0_9" value="19" oninput="calcularTudo()"></div>
+            </div>
 
-        <div>
-            <h2>Ajuste Estatístico de Modelos (SI)</h2>
-            <div id="avisoErro" class="aviso">São necessários pelo menos 5 pontos para calcular o AICc!</div>
-            <div class="grid-resultados" id="areaResultados">
-                
-                <div class="card-resultado" id="card-newtoniano">
-                    <span class="selo-vencedor">Recomendado</span>
-                    <div class="cabecalho-modelo">
-                        <h3>Newtoniano</h3>
-                        <span class="equacao-modelo">
-                            <i>&tau; = &mu; &middot;
-                            <span class="gammadot">
-                                &gamma;<span class="dot">•</span></i>
+            <div>
+                <h2>Ajuste Estatístico de Modelos (SI)</h2>
+                <div id="avisoErro" class="aviso">Sao necessarios pelo menos 5 pontos para calcular o AICc.</div>
+                <div class="grid-resultados" id="areaResultados">
+                    <div class="card-resultado" id="card-newtoniano">
+                        <span class="selo-vencedor">Recomendado</span>
+                        <div class="cabecalho-modelo">
+                            <h3>Newtoniano</h3>
+                            <span class="equacao-modelo">
+                                <i>&tau; = &mu; &middot; <span class="gammadot">&gamma;<span class="dot">&bull;</span></span></i>
                             </span>
+                        </div>
+                        <p>Viscosidade (&mu;): <span><span id="resMu" class="destaque">0</span> <strong>Pa&middot;s</strong></span></p>
+                        <div class="bloco-estatisticas">
+                            <p>R&sup2;: <span id="r2-newtoniano" class="destaque-estat">0.0000</span></p>
+                            <p>R&sup2; Ajustado: <span id="r2adj-newtoniano" class="destaque-estat">0.0000</span></p>
+                            <p>AICc: <span id="aicc-newtoniano" class="destaque-estat">0.00</span></p>
+                        </div>
                     </div>
-                    <p>Viscosidade (μ): <span><span id="resMu" class="destaque">0</span> <strong>Pa·s</strong></span></p>
-                    <div class="bloco-estatisticas">
-                        <p>R²: <span id="r2-newtoniano" class="destaque-estat">0.0000</span></p>
-                        <p>R² Ajustado: <span id="r2adj-newtoniano" class="destaque-estat">0.0000</span></p>
-                        <p>AICc: <span id="aicc-newtoniano" class="destaque-estat">0.00</span></p> 
-                    </div>
-                </div>
 
-                <div class="card-resultado" id="card-bingham">
-                    <span class="selo-vencedor">Recomendado</span>
-                    <div class="cabecalho-modelo">
-                        <h3>Bingham Plástico</h3>
-                        <span class="equacao-modelo">
-                            <i>&tau; = &tau;<sub>0</sub> + &eta; &middot;
-                            <span class="gammadot">
-                                &gamma;<span class="dot">•</span></i>
+                    <div class="card-resultado" id="card-bingham">
+                        <span class="selo-vencedor">Recomendado</span>
+                        <div class="cabecalho-modelo">
+                            <h3>Bingham Plastico</h3>
+                            <span class="equacao-modelo">
+                                <i>&tau; = &tau;<sub>0</sub> + &eta; &middot; <span class="gammadot">&gamma;<span class="dot">&bull;</span></span></i>
                             </span>
+                        </div>
+                        <p>Tensão Limite de Escoamento (τ₀): <span><span id="resYP" class="destaque">0</span> <strong>Pa</strong></span></p>
+                        <p>Viscosidade Plástica (&eta;): <span><span id="resPV" class="destaque">0</span> <strong>Pa&middot;s</strong></span></p>
+                        <div class="bloco-estatisticas">
+                            <p>R&sup2;: <span id="r2-bingham" class="destaque-estat">0.0000</span></p>
+                            <p>R&sup2; Ajustado: <span id="r2adj-bingham" class="destaque-estat">0.0000</span></p>
+                            <p>AICc: <span id="aicc-bingham" class="destaque-estat">0.00</span></p>
+                        </div>
                     </div>
-                    <p>Tensão Limite de Escoamento (τ₀): <span><span id="resYP" class="destaque">0</span> <strong>Pa</strong></span></p>
-                    <p>Viscosidade Plástica (&eta;): <span><span id="resPV" class="destaque">0</span> <strong>Pa·s</strong></span></p>
-                    <div class="bloco-estatisticas">
-                        <p>R²: <span id="r2-bingham" class="destaque-estat">0.0000</span></p>
-                        <p>R² Ajustado: <span id="r2adj-bingham" class="destaque-estat">0.0000</span></p>
-                        <p>AICc: <span id="aicc-bingham" class="destaque-estat">0.00</span></p>
-                    </div>
-                </div>
 
-                <div class="card-resultado" id="card-powerlaw">
-                    <span class="selo-vencedor">Recomendado</span>
-                    <div class="cabecalho-modelo">
-                        <h3>Lei das Potências</h3>
-                        <span class="equacao-modelo">   
-                            <i>&tau; = K &middot; 
-                            <span class="gammadot">
-                                &gamma;<span class="dot">•</span>
-                            </span> <sup>n</sup></span></i>
+                    <div class="card-resultado" id="card-powerlaw">
+                        <span class="selo-vencedor">Recomendado</span>
+                        <div class="cabecalho-modelo">
+                            <h3>Power-law</h3>
+                            <span class="equacao-modelo">
+                                <i>&tau; = K &middot; <span class="gammadot">&gamma;<span class="dot">&bull;</span></span> <sup>n</sup></i>
+                            </span>
+                        </div>
+                        <p>Índice (n): <span><span id="resN" class="destaque">0</span></span></p>
+                        <p>Consistência (K): <span><span id="resK" class="destaque">0</span> <strong>Pa&middot;s<sup>n</sup></strong></span></p>
+                        <div class="bloco-estatisticas">
+                            <p>R&sup2;: <span id="r2-powerlaw" class="destaque-estat">0.0000</span></p>
+                            <p>R&sup2; Ajustado: <span id="r2adj-powerlaw" class="destaque-estat">0.0000</span></p>
+                            <p>AICc: <span id="aicc-powerlaw" class="destaque-estat">0.00</span></p>
+                        </div>
                     </div>
-                    <p>Índice (n): <span><span id="resN" class="destaque">0</span></span></p>
-                    <p>Consistência (K): <span><span id="resK" class="destaque">0</span> <strong>Pa·sⁿ</strong></span></p>
-                    <div class="bloco-estatisticas">
-                        <p>R²: <span id="r2-powerlaw" class="destaque-estat">0.0000</span></p>
-                        <p>R² Ajustado: <span id="r2adj-powerlaw" class="destaque-estat">0.0000</span></p>
-                        <p>AICc: <span id="aicc-powerlaw" class="destaque-estat">0.00</span></p>
-                    </div>
-                </div>
 
-                <div class="card-resultado" id="card-hb">
-                    <span class="selo-vencedor">Recomendado</span>
-                    <div class="cabecalho-modelo">
-                        <h3>Herschel-Bulkley</h3>
-                        <span class="equacao-modelo">
-                            <i>&tau; = &tau;<sub>0</sub> + &eta; &middot;
-                            <span class="gammadot">
-                                &gamma;<span class="dot">•</span>
-                            </span> <sup>n</sup></span></i>
-                    </div>
-                    <p>Tensão Inicial (τ₀): <span><span id="resTau0" class="destaque">0</span> <strong>Pa</strong></span></p>
-                    <p>Índice (n): <span><span id="resNhb" class="destaque">0</span></span></p>
-                    <p>Consistência (K): <span><span id="resKhb" class="destaque">0</span> <strong>Pa·sⁿ</strong></span></p>
-                    <div class="bloco-estatisticas">
-                        <p>R²: <span id="r2-hb" class="destaque-estat">0.0000</span></p>
-                        <p>R² Ajustado: <span id="r2adj-hb" class="destaque-estat">0.0000</span></p>
-                        <p>AICc: <span id="aicc-hb" class="destaque-estat">0.00</span></p>
+                    <div class="card-resultado" id="card-hb">
+                        <span class="selo-vencedor">Recomendado</span>
+                        <div class="cabecalho-modelo">
+                            <h3>Herschel-Bulkley</h3>
+                            <span class="equacao-modelo">
+                                <i>&tau; = &tau;<sub>0</sub> + K &middot; <span class="gammadot">&gamma;<span class="dot">&bull;</span></span> <sup>n</sup></i>
+                            </span>
+                        </div>
+                        <p>Tensão Limite de Escoamento: (τ₀): <span><span id="resTau0" class="destaque">0</span> <strong>Pa</strong></span></p>
+                        <p>Índice (n): <span><span id="resNhb" class="destaque">0</span></span></p>
+                        <p>Consistência (K): <span><span id="resKhb" class="destaque">0</span> <strong>Pa&middot;s<sup>n</sup></strong></span></p>
+                        <div class="bloco-estatisticas">
+                            <p>R&sup2;: <span id="r2-hb" class="destaque-estat">0.0000</span></p>
+                            <p>R&sup2; Ajustado: <span id="r2adj-hb" class="destaque-estat">0.0000</span></p>
+                            <p>AICc: <span id="aicc-hb" class="destaque-estat">0.00</span></p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div id="notaMelhorAjuste" class="observacao-ajuste"></div>
-        </div>
-    </div>
-
-    <div class="header-grafico">
-        <h1>Análise Gráfica</h1>
-        <div class="botoes-modelo">
-            <button id="btn-toggle-pontos" class="btn-toggle btn-pontos ativo" onclick="alternarCurva('pontos')">Dados Lidos</button>
-            <button id="btn-toggle-newtoniano" class="btn-toggle btn-newton" onclick="alternarCurva('newtoniano')">Newtoniano</button>
-            <button id="btn-toggle-bingham" class="btn-toggle btn-bingham" onclick="alternarCurva('bingham')">Bingham</button>
-            <button id="btn-toggle-powerlaw" class="btn-toggle btn-powerlaw" onclick="alternarCurva('powerlaw')">Power-law</button>
-            <button id="btn-toggle-hb" class="btn-toggle btn-hb" onclick="alternarCurva('hb')">Herschel-Bulkley</button>
-        </div>
-    </div>
-
-    <div class="barra-eixos">
-        <div class="controles-escala-grupo">
-            <div class="controles-escala">
-                <strong>Eixo X (Taxa):</strong>
-                <button id="btn-x-linear" class="btn-escala ativo" onclick="mudarEscala('x', 'linear')">Linear</button>
-                <button id="btn-x-logarithmic" class="btn-escala" onclick="mudarEscala('x', 'logarithmic')">Log</button>
-            </div>
-            <div class="controles-escala">
-                <strong>Eixo Y (Tensão):</strong>
-                <button id="btn-y-linear" class="btn-escala ativo" onclick="mudarEscala('y', 'linear')">Linear</button>
-                <button id="btn-y-logarithmic" class="btn-escala" onclick="mudarEscala('y', 'logarithmic')">Log</button>
+                <div id="notaMelhorAjuste" class="observacao-ajuste"></div>
             </div>
         </div>
-    </div>
 
-    <canvas id="meuGrafico" height="120"></canvas>
+        <div class="header-grafico">
+            <h1>Análise Gráfica</h1>
+            <div class="botoes-modelo">
+                <button id="btn-toggle-pontos" class="btn-toggle btn-pontos ativo" onclick="alternarCurva('pontos')">Dados Lidos</button>
+                <button id="btn-toggle-newtoniano" class="btn-toggle btn-newton" onclick="alternarCurva('newtoniano')">Newtoniano</button>
+                <button id="btn-toggle-bingham" class="btn-toggle btn-bingham" onclick="alternarCurva('bingham')">Bingham</button>
+                <button id="btn-toggle-powerlaw" class="btn-toggle btn-powerlaw" onclick="alternarCurva('powerlaw')">Power-law</button>
+                <button id="btn-toggle-hb" class="btn-toggle btn-hb" onclick="alternarCurva('hb')">Herschel-Bulkley</button>
+            </div>
+        </div>
 
-    <div class="header-tabela">
-        <h2>Tabela de Dados (SI)</h2>
-        <button class="btn-exportar" onclick="exportarExcel()">📥 Exportar para Excel</button>
-    </div>
-    
-    <table id="tabelaDados">
-        <thead>
-            <tr>
-                <th>RPM</th>
-                <th>Leitura</th>
-                <th>Taxa [s⁻¹]</th>
-                <th>Tensão [Pa]</th>
-                <th>Viscosidade [Pa·s]</th>
-            </tr>
-        </thead>
-        <tbody id="corpoTabela"></tbody>
-    </table>
+        <div class="barra-eixos">
+            <div class="controles-escala-grupo">
+                <div class="controles-escala">
+                    <strong>Eixo X (Taxa):</strong>
+                    <button id="btn-x-linear" class="btn-escala ativo" onclick="mudarEscala('x', 'linear')">Linear</button>
+                    <button id="btn-x-logarithmic" class="btn-escala" onclick="mudarEscala('x', 'logarithmic')">Log</button>
+                </div>
+                <div class="controles-escala">
+                    <strong>Eixo Y (Tensão):</strong>
+                    <button id="btn-y-linear" class="btn-escala ativo" onclick="mudarEscala('y', 'linear')">Linear</button>
+                    <button id="btn-y-logarithmic" class="btn-escala" onclick="mudarEscala('y', 'logarithmic')">Log</button>
+                </div>
+            </div>
+        </div>
+
+        <canvas id="meuGrafico" height="120"></canvas>
+
+        <div class="header-tabela">
+            <h2>Tabela de Dados (SI)</h2>
+            <button class="btn-exportar" onclick="exportarExcel()">Exportar para Excel</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="tabelaDados">
+                <thead>
+                    <tr>
+                        <th>RPM</th>
+                        <th>Leitura</th>
+                        <th>Taxa [s<sup>-1</sup>]</th>
+                        <th>Tensão [Pa]</th>
+                        <th>Viscosidade [Pa&middot;s]</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoTabela"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="pagina-comparativo" class="pagina-analise">
+        <div class="toolbar-comparativo">
+            <h2>Leituras Comparativas</h2>
+            <div class="grupo-acoes-comparativo">
+                <button class="btn-acao" onclick="adicionarAmostraComparativa()">Adicionar Coluna</button>
+                <button class="btn-acao btn-acao-secundaria" onclick="removerAmostraComparativa()">Retirar Coluna</button>
+            </div>
+        </div>
+
+        <p class="info-comparativo">Preencha as leituras do Fann por amostra. O mesmo modelo de fitting será aplicado a todas as curvas validas no comparativo.</p>
+
+        <div class="table-wrapper">
+            <table id="tabelaComparativaLeituras" class="tabela-comparativa">
+                <thead id="cabecalhoComparativo"></thead>
+                <tbody id="corpoComparativo"></tbody>
+            </table>
+        </div>
+
+        <div class="seletor-modelo" style="margin-top: 20px;">
+            <label for="modeloComparativo"><strong>Modelo de fitting:</strong></label>
+            <select id="modeloComparativo" onchange="calcularComparativo()">
+                <option value="newtoniano">Newtoniano</option>
+                <option value="bingham">Bingham Plastico</option>
+                <option value="powerlaw" selected>Power-law</option>
+                <option value="hb">Herschel-Bulkley</option>
+            </select>
+            <span style="font-size: 13px; color: #555;">Apenas um modelo pode ser exibido e comparado por vez.</span>
+        </div>
+
+        <div class="header-grafico">
+            <h1>Comparativo de Curvas</h1>
+            <div id="resumoModeloComparativo" class="modelo-fixo">Modelo ativo: Power-law</div>
+        </div>
+
+        <div class="barra-eixos">
+            <div class="controles-escala-grupo">
+                <div class="controles-escala">
+                    <strong>Eixo X (Taxa):</strong>
+                    <button id="btn-comp-x-linear" class="btn-escala ativo" onclick="mudarEscalaComparativa('x', 'linear')">Linear</button>
+                    <button id="btn-comp-x-logarithmic" class="btn-escala" onclick="mudarEscalaComparativa('x', 'logarithmic')">Log</button>
+                </div>
+                <div class="controles-escala">
+                    <strong>Eixo Y (Tensão):</strong>
+                    <button id="btn-comp-y-linear" class="btn-escala ativo" onclick="mudarEscalaComparativa('y', 'linear')">Linear</button>
+                    <button id="btn-comp-y-logarithmic" class="btn-escala" onclick="mudarEscalaComparativa('y', 'logarithmic')">Log</button>
+                </div>
+            </div>
+        </div>
+
+        <canvas id="graficoComparativo" height="120"></canvas>
+
+        <div id="avisoComparativo" class="aviso">Preencha ao menos uma amostra com 5 pontos válidos para gerar o fitting comparativo.</div>
+
+        <div class="header-tabela">
+            <h2>Resultados do Fitting Selecionado</h2>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="tabelaResultadosComparativos">
+                <thead id="cabecalhoResultadosComparativos"></thead>
+                <tbody id="corpoResultadosComparativos"></tbody>
+            </table>
+        </div>
+
+        <div id="notaComparativo" class="observacao-ajuste"></div>
+    </section>
 </div>
 
 <script>
     let graficoReologia;
     let escalaX = 'linear';
     let escalaY = 'linear';
-    
-    // GERENCIADOR DE ESTADO DAS CURVAS (Múltipla Seleção)
+
     let curvasAtivas = {
-        pontos: true, 
-        newtoniano: false, 
-        bingham: false, 
-        powerlaw: false, 
+        pontos: true,
+        newtoniano: false,
+        bingham: false,
+        powerlaw: false,
         hb: false
     };
 
     const FATOR_TAXA = 1.703;
-    const FATOR_TENSAO_PA = 1.067 * 0.4788; 
-    
+    const FATOR_TENSAO_PA = 1.067 * 0.4788;
+
     const ROTACOES_6 = [600, 300, 200, 100, 6, 3];
     const ROTACOES_12 = [600, 300, 200, 180, 100, 90, 60, 30, 6, 3, 1.8, 0.9];
     let rotacoesAtuais = ROTACOES_12;
@@ -298,9 +826,106 @@
     const TOL_N_QUASE_LINEAR = 0.03;
     const DELTA_AICC_MINIMO_RECLASSIFICACAO = 2.0;
 
-    let paramsModelos = { mu: 0, pv: 0, yp: 0, n_pl: 0, k_pl: 0, tau0: 0, n_hb: 0, k_hb: 0 };
+    const DEFINICOES_MODELOS = {
+        newtoniano: {
+            rotulo: 'Newtoniano',
+            parametros: [
+                { titulo: 'Viscosidade (&mu;) [Pa&middot;s]', chave: 'mu', casas: 4 }
+            ]
+        },
+        bingham: {
+            rotulo: 'Bingham Plástico',
+            parametros: [
+                { titulo: 'Escoamento (&tau;<sub>0</sub>) [Pa]', chave: 'yp', casas: 2 },
+                { titulo: 'Visc. Plástica (&eta;) [Pa&middot;s]', chave: 'pv', casas: 4 }
+            ]
+        },
+        powerlaw: {
+            rotulo: 'Power-law',
+            parametros: [
+                { titulo: 'Índice (n)', chave: 'n_pl', casas: 3 },
+                { titulo: 'Consistência (K) [Pa&middot;s<sup>n</sup>]', chave: 'k_pl', casas: 4 }
+            ]
+        },
+        hb: {
+            rotulo: 'Herschel-Bulkley',
+            parametros: [
+                { titulo: 'Tensão inicial (&tau;<sub>0</sub>) [Pa]', chave: 'tau0', casas: 2 },
+                { titulo: 'Índice (n)', chave: 'n_hb', casas: 3 },
+                { titulo: 'Consistência (K) [Pa&middot;s<sup>n</sup>]', chave: 'k_hb', casas: 4 }
+            ]
+        }
+    };
+
+    const CORES_COMPARATIVO = ['#001ee1', '#e12d2d', '#00a878', '#f5a623', '#6f42c1', '#20c997', '#d63384', '#198754'];
+
+    let paramsModelos = criarParametrosVazios();
     let dadosPontosReais = [];
-    let taxaMaximaLida = 1022; 
+    let taxaMaximaLida = 0;
+
+    let paginaAtiva = 'individual';
+    let graficoComparativo;
+    let escalaComparativaX = 'linear';
+    let escalaComparativaY = 'linear';
+    let quantidadeAmostrasComparativas = 2;
+    let leiturasComparativas = [];
+    let datasetsComparativosAtuais = [];
+
+    const pluginEspacoLegenda = {
+        beforeInit: function(chart) {
+            const ajusteOriginal = chart.legend.fit;
+            chart.legend.fit = function fit() {
+                ajusteOriginal.bind(chart.legend)();
+                this.height += 30;
+            };
+        }
+    };
+
+    function criarParametrosVazios() {
+        return { mu: 0, pv: 0, yp: 0, n_pl: 0, k_pl: 0, tau0: 0, n_hb: 0, k_hb: 0 };
+    }
+
+    function criarEstatisticaInvalida() {
+        return { r2: 0, r2Adj: 0, aicc: Infinity };
+    }
+
+    function rpmParaId(rpm) {
+        return rpm.toString().replace('.', '_');
+    }
+
+    function formatarRpm(rpm) {
+        return rpm.toString().replace('.', ',');
+    }
+
+    function formatarNumero(valor, casas) {
+        return Number.isFinite(valor) ? valor.toFixed(casas).replace('.', ',') : '-';
+    }
+
+    function formatarLeitura(valor) {
+        return Number.isFinite(valor) ? valor.toString().replace('.', ',') : '-';
+    }
+
+    function obterRotuloModelo(modelo) {
+        return DEFINICOES_MODELOS[modelo].rotulo;
+    }
+
+    function criarLeiturasComparativasVazias() {
+        let leituras = {};
+        ROTACOES_12.forEach((rpm) => {
+            leituras[rpm.toString()] = '';
+        });
+        return leituras;
+    }
+
+    function garantirEstadoComparativo() {
+        while (leiturasComparativas.length < quantidadeAmostrasComparativas) {
+            leiturasComparativas.push(criarLeiturasComparativasVazias());
+        }
+
+        if (leiturasComparativas.length > quantidadeAmostrasComparativas) {
+            leiturasComparativas = leiturasComparativas.slice(0, quantidadeAmostrasComparativas);
+        }
+    }
 
     function montarObservacaoReclassificacao(modeloOriginal, modeloRecomendado, n, deltaAicc) {
         let motivos = [];
@@ -353,10 +978,23 @@
         let n = x.length;
         if (n === 0) return { slope: 0, intercept: 0 };
         if (n === 1) return { slope: 0, intercept: y[0] };
-        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-        for (let i = 0; i < n; i++) { sumX += x[i]; sumY += y[i]; sumXY += x[i] * y[i]; sumXX += x[i] * x[i]; }
-        let slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+
+        let sumX = 0;
+        let sumY = 0;
+        let sumXY = 0;
+        let sumXX = 0;
+
+        for (let i = 0; i < n; i++) {
+            sumX += x[i];
+            sumY += y[i];
+            sumXY += x[i] * y[i];
+            sumXX += x[i] * x[i];
+        }
+
+        let denominador = (n * sumXX - sumX * sumX);
+        let slope = denominador === 0 ? 0 : (n * sumXY - sumX * sumY) / denominador;
         let intercept = (sumY - slope * sumX) / n;
+
         return { slope: slope, intercept: intercept };
     }
 
@@ -378,8 +1016,7 @@
         }
 
         let mu = sumXX === 0 ? 0 : sumXY / sumXX;
-        let yPred = x.map(valorX => mu * valorX);
-
+        let yPred = x.map((valorX) => mu * valorX);
         return { mu: mu, yPred: yPred, sse: calcularErroQuadratico(y, yPred) };
     }
 
@@ -399,11 +1036,10 @@
 
     function avaliarPowerLaw(x, y, n) {
         let k = calcularKPowerLaw(x, y, n);
-        let yPred = x.map(valorX => k * Math.pow(valorX, n));
+        let yPred = x.map((valorX) => k * Math.pow(valorX, n));
         return { n: n, k: k, yPred: yPred, sse: calcularErroQuadratico(y, yPred) };
     }
 
-    // Busca numerica simples para manter o ajuste no espaco linear de tensao.
     function ajustarPowerLaw(x, y) {
         let melhor = null;
         let nMin = 0.01;
@@ -411,7 +1047,6 @@
 
         for (let iter = 0; iter < 5; iter++) {
             let passo = (nMax - nMin) / 60;
-
             for (let i = 0; i <= 60; i++) {
                 let n = nMin + i * passo;
                 let ajuste = avaliarPowerLaw(x, y, n);
@@ -419,7 +1054,6 @@
                     melhor = ajuste;
                 }
             }
-
             if (passo <= 0) break;
             nMin = Math.max(0.001, melhor.n - passo);
             nMax = melhor.n + passo;
@@ -444,7 +1078,7 @@
 
     function avaliarHerschelBulkley(x, y, tau0, n) {
         let k = calcularKHB(x, y, tau0, n);
-        let yPred = x.map(valorX => tau0 + k * Math.pow(valorX, n));
+        let yPred = x.map((valorX) => tau0 + k * Math.pow(valorX, n));
         return { tau0: tau0, n: n, k: k, yPred: yPred, sse: calcularErroQuadratico(y, yPred) };
     }
 
@@ -455,7 +1089,6 @@
 
         for (let iter = 0; iter < 5; iter++) {
             let passo = (nMax - nMin) / 60;
-
             for (let i = 0; i <= 60; i++) {
                 let n = nMin + i * passo;
                 let ajuste = avaliarHerschelBulkley(x, y, tau0, n);
@@ -463,7 +1096,6 @@
                     melhor = ajuste;
                 }
             }
-
             if (passo <= 0) break;
             nMin = Math.max(0.001, melhor.n - passo);
             nMax = melhor.n + passo;
@@ -484,7 +1116,6 @@
 
         for (let iter = 0; iter < 4; iter++) {
             let passoTau = (tauMax - tauMin) / 40;
-
             for (let i = 0; i <= 40; i++) {
                 let tau0 = tauMin + i * passoTau;
                 let ajuste = ajustarExpoenteHB(x, y, tau0);
@@ -492,7 +1123,6 @@
                     melhor = ajuste;
                 }
             }
-
             if (passoTau <= 0) break;
             tauMin = Math.max(0, melhor.tau0 - passoTau);
             tauMax = Math.min(menorTensao * 0.999, melhor.tau0 + passoTau);
@@ -503,15 +1133,16 @@
 
     function calcularEstatisticasRigorosas(yReais, yPreditos, k) {
         let n = yReais.length;
-        if (n <= k + 1) return { r2: 0, r2Adj: 0, aicc: Infinity }; 
+        if (n <= k + 1) return criarEstatisticaInvalida();
 
         let somaY = 0;
-        for(let i=0; i<n; i++) somaY += yReais[i];
+        for (let i = 0; i < n; i++) somaY += yReais[i];
         let mediaY = somaY / n;
 
         let ssTot = 0;
         let ssRes = 0;
-        for(let i=0; i<n; i++) {
+
+        for (let i = 0; i < n; i++) {
             ssTot += Math.pow(yReais[i] - mediaY, 2);
             ssRes += Math.pow(yReais[i] - yPreditos[i], 2);
         }
@@ -519,13 +1150,7 @@
         let r2 = ssTot === 0 ? 1 : 1 - (ssRes / ssTot);
         let r2Adj = ssTot === 0 ? 1 : 1 - ((ssRes / (n - k)) / (ssTot / (n - 1)));
 
-        let aic = 0;
-        if (ssRes > 0) {
-            aic = n * Math.log(ssRes / n) + 2 * k;
-        } else {
-            aic = -999;
-        }
-
+        let aic = ssRes > 0 ? n * Math.log(ssRes / n) + 2 * k : -999;
         let aicc = aic + (2 * k * (k + 1)) / (n - k - 1);
 
         return {
@@ -535,47 +1160,191 @@
         };
     }
 
+    function montarPontoValido(rpm, leitura) {
+        let taxa = rpm * FATOR_TAXA;
+        let tensao = leitura * FATOR_TENSAO_PA;
+        return {
+            rpm: rpm,
+            dial: leitura,
+            taxa: taxa,
+            tensao: tensao,
+            viscosidade: taxa === 0 ? 0 : tensao / taxa
+        };
+    }
+
+    function analisarPontos(pontosOriginais) {
+        let pontosOrdenados = pontosOriginais.slice().sort((a, b) => a.taxa - b.taxa);
+        let analiseBase = {
+            valido: false,
+            pontosOrdenados: pontosOrdenados,
+            taxaMaxima: pontosOrdenados.reduce((maximo, ponto) => Math.max(maximo, ponto.taxa), 0),
+            params: criarParametrosVazios(),
+            stats: {
+                newtoniano: criarEstatisticaInvalida(),
+                bingham: criarEstatisticaInvalida(),
+                powerlaw: criarEstatisticaInvalida(),
+                hb: criarEstatisticaInvalida()
+            },
+            decisaoMelhorModelo: { vencedorId: null, observacao: '' }
+        };
+
+        if (pontosOrdenados.length < 5) {
+            return analiseBase;
+        }
+
+        let xReais = pontosOrdenados.map((ponto) => ponto.taxa);
+        let yReais = pontosOrdenados.map((ponto) => ponto.tensao);
+        let params = criarParametrosVazios();
+
+        let ajusteNewton = ajustarNewtoniano(xReais, yReais);
+        params.mu = ajusteNewton.mu;
+        let statNewton = calcularEstatisticasRigorosas(yReais, ajusteNewton.yPred, 1);
+
+        let regBingham = regressaoLinear(xReais, yReais);
+        params.pv = regBingham.slope;
+        params.yp = regBingham.intercept;
+        let yBingham = xReais.map((x) => params.yp + params.pv * x);
+        let statBingham = calcularEstatisticasRigorosas(yReais, yBingham, 2);
+
+        let ajustePL = ajustarPowerLaw(xReais, yReais);
+        params.n_pl = ajustePL.n;
+        params.k_pl = ajustePL.k;
+        let statPower = calcularEstatisticasRigorosas(yReais, ajustePL.yPred, 2);
+
+        let ajusteHB = ajustarHerschelBulkley(xReais, yReais);
+        params.tau0 = ajusteHB.tau0;
+        params.n_hb = ajusteHB.n;
+        params.k_hb = ajusteHB.k;
+        let statHB = calcularEstatisticasRigorosas(yReais, ajusteHB.yPred, 3);
+
+        let ranking = [
+            { id: 'card-newtoniano', aicc: statNewton.aicc },
+            { id: 'card-bingham', aicc: statBingham.aicc },
+            { id: 'card-powerlaw', aicc: statPower.aicc },
+            { id: 'card-hb', aicc: statHB.aicc }
+        ];
+
+        let rankingValido = ranking.filter((modelo) => modelo.aicc !== Infinity);
+        rankingValido.sort((a, b) => a.aicc - b.aicc);
+
+        return {
+            valido: true,
+            pontosOrdenados: pontosOrdenados,
+            taxaMaxima: analiseBase.taxaMaxima,
+            params: params,
+            stats: {
+                newtoniano: statNewton,
+                bingham: statBingham,
+                powerlaw: statPower,
+                hb: statHB
+            },
+            decisaoMelhorModelo: decidirMelhorModelo(rankingValido, statNewton, statBingham, statPower, statHB, params)
+        };
+    }
+
+    function coletarPontosValidosIndividuais() {
+        let pontosValidos = [];
+
+        rotacoesAtuais.forEach((rpm) => {
+            let idCampo = 'L' + rpmParaId(rpm);
+            let valorTexto = document.getElementById(idCampo).value;
+
+            if (valorTexto !== '' && Number(valorTexto) > 0) {
+                pontosValidos.push(montarPontoValido(rpm, Number(valorTexto)));
+            }
+        });
+
+        return pontosValidos;
+    }
+
+    function coletarPontosValidosComparativos(indiceAmostra) {
+        let pontosValidos = [];
+        let leituras = leiturasComparativas[indiceAmostra] || {};
+
+        rotacoesAtuais.forEach((rpm) => {
+            let valorTexto = leituras[rpm.toString()];
+            if (valorTexto !== '' && Number(valorTexto) > 0) {
+                pontosValidos.push(montarPontoValido(rpm, Number(valorTexto)));
+            }
+        });
+
+        return pontosValidos;
+    }
+
+    function mostrarPagina(pagina) {
+        paginaAtiva = pagina;
+        document.getElementById('pagina-individual').classList.toggle('ativa', pagina === 'individual');
+        document.getElementById('pagina-comparativo').classList.toggle('ativa', pagina === 'comparativo');
+        document.getElementById('btn-pagina-individual').classList.toggle('ativo', pagina === 'individual');
+        document.getElementById('btn-pagina-comparativo').classList.toggle('ativo', pagina === 'comparativo');
+
+        if (pagina === 'individual') {
+            calcularTudo();
+        } else {
+            calcularComparativo();
+        }
+    }
+
     function mudarConfiguracaoEquip() {
         let tipo = document.getElementById('tipoFann').value;
         let extras = document.querySelectorAll('.vel-extra');
-        if (tipo === "6") {
+
+        if (tipo === '6') {
             rotacoesAtuais = ROTACOES_6;
-            extras.forEach(el => el.style.display = 'none');
+            extras.forEach((el) => {
+                el.style.display = 'none';
+            });
         } else {
             rotacoesAtuais = ROTACOES_12;
-            extras.forEach(el => el.style.display = 'flex');
+            extras.forEach((el) => {
+                el.style.display = 'flex';
+            });
         }
+
+        renderizarTabelaComparativa();
         calcularTudo();
     }
 
-    // Função que acende/apaga os botões e atualiza o gráfico
     function alternarCurva(modelo) {
-        curvasAtivas[modelo] = !curvasAtivas[modelo]; 
+        curvasAtivas[modelo] = !curvasAtivas[modelo];
         let btn = document.getElementById('btn-toggle-' + modelo);
-        btn.classList.toggle('ativo', curvasAtivas[modelo]); 
-        atualizarGraficoComCurvas(); 
+        btn.classList.toggle('ativo', curvasAtivas[modelo]);
+        atualizarGraficoComCurvas();
+    }
+
+    function atualizarTextoIndividual(analise) {
+        paramsModelos = analise.params;
+
+        document.getElementById('resMu').innerText = analise.params.mu.toFixed(4);
+        document.getElementById('resPV').innerText = analise.params.pv.toFixed(4);
+        document.getElementById('resYP').innerText = analise.params.yp.toFixed(2);
+        document.getElementById('resN').innerText = analise.params.n_pl.toFixed(3);
+        document.getElementById('resK').innerText = analise.params.k_pl.toFixed(4);
+        document.getElementById('resTau0').innerText = analise.params.tau0.toFixed(2);
+        document.getElementById('resNhb').innerText = analise.params.n_hb.toFixed(3);
+        document.getElementById('resKhb').innerText = analise.params.k_hb.toFixed(4);
+
+        document.getElementById('r2-newtoniano').innerText = analise.stats.newtoniano.r2.toFixed(4);
+        document.getElementById('r2adj-newtoniano').innerText = analise.stats.newtoniano.r2Adj.toFixed(4);
+        document.getElementById('aicc-newtoniano').innerText = analise.stats.newtoniano.aicc.toFixed(2);
+
+        document.getElementById('r2-bingham').innerText = analise.stats.bingham.r2.toFixed(4);
+        document.getElementById('r2adj-bingham').innerText = analise.stats.bingham.r2Adj.toFixed(4);
+        document.getElementById('aicc-bingham').innerText = analise.stats.bingham.aicc.toFixed(2);
+
+        document.getElementById('r2-powerlaw').innerText = analise.stats.powerlaw.r2.toFixed(4);
+        document.getElementById('r2adj-powerlaw').innerText = analise.stats.powerlaw.r2Adj.toFixed(4);
+        document.getElementById('aicc-powerlaw').innerText = analise.stats.powerlaw.aicc.toFixed(2);
+
+        document.getElementById('r2-hb').innerText = analise.stats.hb.r2.toFixed(4);
+        document.getElementById('r2adj-hb').innerText = analise.stats.hb.r2Adj.toFixed(4);
+        document.getElementById('aicc-hb').innerText = analise.stats.hb.aicc.toFixed(2);
     }
 
     function calcularTudo() {
-        let pontosValidos = [];
-        taxaMaximaLida = 0;
+        let pontosValidos = coletarPontosValidosIndividuais();
         let notaMelhorAjuste = document.getElementById('notaMelhorAjuste');
-        
-        rotacoesAtuais.forEach((rpm) => {
-            let idCampo = 'L' + rpm.toString().replace('.', '_');
-            let valorTexto = document.getElementById(idCampo).value;
-            
-            if (valorTexto !== "" && Number(valorTexto) > 0) {
-                let leitura = Number(valorTexto);
-                let taxa = rpm * FATOR_TAXA;
-                if(taxa > taxaMaximaLida) taxaMaximaLida = taxa;
-
-                pontosValidos.push({
-                    rpm: rpm, dial: leitura, taxa: taxa, tensao: leitura * FATOR_TENSAO_PA,
-                    viscosidade: (leitura * FATOR_TENSAO_PA) / taxa
-                });
-            }
-        });
+        taxaMaximaLida = pontosValidos.reduce((maximo, ponto) => Math.max(maximo, ponto.taxa), 0);
 
         if (pontosValidos.length < 5) {
             document.getElementById('avisoErro').style.display = 'block';
@@ -583,123 +1352,110 @@
             notaMelhorAjuste.style.display = 'none';
             notaMelhorAjuste.innerText = '';
             return;
-        } else {
-            document.getElementById('avisoErro').style.display = 'none';
-            document.getElementById('areaResultados').style.opacity = '1';
         }
 
-        let yReais = pontosValidos.map(p => p.tensao);
-        let xReais = pontosValidos.map(p => p.taxa);
+        document.getElementById('avisoErro').style.display = 'none';
+        document.getElementById('areaResultados').style.opacity = '1';
 
-        // 1. Newtoniano
-        let ajusteNewton = ajustarNewtoniano(xReais, yReais);
-        paramsModelos.mu = ajusteNewton.mu;
-        document.getElementById('resMu').innerText = paramsModelos.mu.toFixed(4);
-        
-        let yNewton = ajusteNewton.yPred;
-        let statNewton = calcularEstatisticasRigorosas(yReais, yNewton, 1);
-        document.getElementById('r2-newtoniano').innerText = statNewton.r2.toFixed(4);
-        document.getElementById('r2adj-newtoniano').innerText = statNewton.r2Adj.toFixed(4);
-        document.getElementById('aicc-newtoniano').innerText = statNewton.aicc.toFixed(2);
+        let analise = analisarPontos(pontosValidos);
+        atualizarTextoIndividual(analise);
 
-        // 2. Bingham
-        let regBingham = regressaoLinear(xReais, yReais);
-        paramsModelos.pv = regBingham.slope;
-        paramsModelos.yp = regBingham.intercept;
-        document.getElementById('resPV').innerText = paramsModelos.pv.toFixed(4);
-        document.getElementById('resYP').innerText = paramsModelos.yp.toFixed(2);
-        
-        let yBingham = xReais.map(x => paramsModelos.yp + paramsModelos.pv * x);
-        let statBingham = calcularEstatisticasRigorosas(yReais, yBingham, 2);
-        document.getElementById('r2-bingham').innerText = statBingham.r2.toFixed(4);
-        document.getElementById('r2adj-bingham').innerText = statBingham.r2Adj.toFixed(4);
-        document.getElementById('aicc-bingham').innerText = statBingham.aicc.toFixed(2);
+        document.querySelectorAll('#areaResultados .card-resultado').forEach((card) => {
+            card.classList.remove('vencedor');
+        });
 
-        // 3. Power-law
-        let ajustePL = ajustarPowerLaw(xReais, yReais);
-        paramsModelos.n_pl = ajustePL.n;
-        paramsModelos.k_pl = ajustePL.k;
-        document.getElementById('resN').innerText = paramsModelos.n_pl.toFixed(3);
-        document.getElementById('resK').innerText = paramsModelos.k_pl.toFixed(4);
-
-        let yPower = ajustePL.yPred;
-        let statPower = calcularEstatisticasRigorosas(yReais, yPower, 2);
-        document.getElementById('r2-powerlaw').innerText = statPower.r2.toFixed(4);
-        document.getElementById('r2adj-powerlaw').innerText = statPower.r2Adj.toFixed(4);
-        document.getElementById('aicc-powerlaw').innerText = statPower.aicc.toFixed(2);
-
-        // 4. Herschel-Bulkley
-        let ajusteHB = ajustarHerschelBulkley(xReais, yReais);
-        paramsModelos.tau0 = ajusteHB.tau0;
-        paramsModelos.n_hb = ajusteHB.n;
-        paramsModelos.k_hb = ajusteHB.k;
-        document.getElementById('resTau0').innerText = paramsModelos.tau0.toFixed(2);
-        document.getElementById('resNhb').innerText = paramsModelos.n_hb.toFixed(3);
-        document.getElementById('resKhb').innerText = paramsModelos.k_hb.toFixed(4);
-
-        let yHB = ajusteHB.yPred;
-        let statHB = calcularEstatisticasRigorosas(yReais, yHB, 3);
-        document.getElementById('r2-hb').innerText = statHB.r2.toFixed(4);
-        document.getElementById('r2adj-hb').innerText = statHB.r2Adj.toFixed(4);
-        document.getElementById('aicc-hb').innerText = statHB.aicc.toFixed(2);
-
-        // RANKING E VENCEDOR
-        let ranking = [
-            { id: 'card-newtoniano', aicc: statNewton.aicc },
-            { id: 'card-bingham', aicc: statBingham.aicc },
-            { id: 'card-powerlaw', aicc: statPower.aicc },
-            { id: 'card-hb', aicc: statHB.aicc }
-        ];
-        
-        let rankingValido = ranking.filter(m => m.aicc !== Infinity);
-        rankingValido.sort((a, b) => a.aicc - b.aicc); 
-        let decisaoMelhorModelo = decidirMelhorModelo(rankingValido, statNewton, statBingham, statPower, statHB, paramsModelos);
-        
-        document.querySelectorAll('.card-resultado').forEach(card => card.classList.remove('vencedor'));
-        if (decisaoMelhorModelo.vencedorId) {
-            document.getElementById(decisaoMelhorModelo.vencedorId).classList.add('vencedor');
+        if (analise.decisaoMelhorModelo.vencedorId) {
+            document.getElementById(analise.decisaoMelhorModelo.vencedorId).classList.add('vencedor');
         }
 
-        if (decisaoMelhorModelo.observacao) {
-            notaMelhorAjuste.innerText = decisaoMelhorModelo.observacao;
+        if (analise.decisaoMelhorModelo.observacao) {
+            notaMelhorAjuste.innerText = analise.decisaoMelhorModelo.observacao;
             notaMelhorAjuste.style.display = 'block';
         } else {
-            notaMelhorAjuste.style.display = 'none';
             notaMelhorAjuste.innerText = '';
+            notaMelhorAjuste.style.display = 'none';
         }
 
         dadosPontosReais = [];
-        let htmlTabela = "";
+        let htmlTabela = '';
 
-        pontosValidos.forEach((p) => {
+        pontosValidos.forEach((ponto) => {
             htmlTabela += `<tr>
-                <td><strong>${p.rpm.toString().replace('.', ',')}</strong></td>
-                <td>${p.dial}</td>
-                <td>${p.taxa.toFixed(2).replace('.', ',')}</td>
-                <td>${p.tensao.toFixed(2).replace('.', ',')}</td>
-                <td>${p.viscosidade.toFixed(4).replace('.', ',')}</td>
+                <td><strong>${formatarRpm(ponto.rpm)}</strong></td>
+                <td>${formatarLeitura(ponto.dial)}</td>
+                <td>${formatarNumero(ponto.taxa, 2)}</td>
+                <td>${formatarNumero(ponto.tensao, 2)}</td>
+                <td>${formatarNumero(ponto.viscosidade, 4)}</td>
             </tr>`;
-            dadosPontosReais.push({ x: p.taxa, y: p.tensao });
+            dadosPontosReais.push({ x: ponto.taxa, y: ponto.tensao });
         });
 
         document.getElementById('corpoTabela').innerHTML = htmlTabela;
-        dadosPontosReais.sort((a, b) => a.x - b.x); 
-        
+        dadosPontosReais.sort((a, b) => a.x - b.x);
+        taxaMaximaLida = analise.taxaMaxima;
+
         atualizarGraficoComCurvas();
     }
 
-    function gerarLinhaTeoricaEspecifica(modelo) {
+    function gerarLinhaTeoricaEspecifica(modelo, params, taxaMaxima) {
         let linha = [];
-        let step = (taxaMaximaLida * 1.1) / 100;
-        for (let x = 1; x <= taxaMaximaLida * 1.1; x += step) {
-            let y = 0;
-            if (modelo === 'newtoniano') y = paramsModelos.mu * x;
-            else if (modelo === 'bingham') y = paramsModelos.yp + (paramsModelos.pv * x);
-            else if (modelo === 'powerlaw') y = paramsModelos.k_pl * Math.pow(x, paramsModelos.n_pl);
-            else if (modelo === 'hb') y = paramsModelos.tau0 + paramsModelos.k_hb * Math.pow(x, paramsModelos.n_hb);
-            if (y > 0) linha.push({ x: x, y: y });
+        if (!taxaMaxima || taxaMaxima <= 0) {
+            return linha;
         }
+
+        let limite = 1500;
+        let step = 1;
+        let xInicial = Math.max(0.1, step);
+
+        for (let x = xInicial; x <= limite; x += step) {
+            let y = 0;
+
+            if (modelo === 'newtoniano') y = params.mu * x;
+            else if (modelo === 'bingham') y = params.yp + (params.pv * x);
+            else if (modelo === 'powerlaw') y = params.k_pl * Math.pow(x, params.n_pl);
+            else if (modelo === 'hb') y = params.tau0 + params.k_hb * Math.pow(x, params.n_hb);
+
+            if (y > 0) {
+                linha.push({ x: x, y: y });
+            }
+        }
+
         return linha;
+    }
+
+    function criarOpcoesGrafico(escalaAtualX, escalaAtualY) {
+        return {
+            scales: {
+                x: {
+                    type: escalaAtualX,
+                    title: {
+                        display: true,
+                        text: 'Taxa de Cisalhamento (s⁻¹)',
+                        font: { weight: 'bold' }
+                    }
+                },
+                y: {
+                    type: escalaAtualY,
+                    title: {
+                        display: true,
+                        text: 'Tensão de Cisalhamento (Pa)',
+                        font: { weight: 'bold' }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    align: 'start',
+                    labels: {
+                        usePointStyle: true,
+                        boxWidth: 15,
+                        boxHeight: 8,
+                        padding: 25
+                    }
+                }
+            }
+        };
     }
 
     function atualizarGraficoComCurvas() {
@@ -708,65 +1464,39 @@
 
         let datasets = [];
 
-        // MAGIA DA BOLINHA VAZADA E DAS MÚLTIPLAS CURVAS
         if (curvasAtivas.pontos) {
             datasets.push({
                 label: 'Dados Lidos',
                 data: dadosPontosReais,
-                borderColor: '#444444',         /* Borda cinza escuro */
-                backgroundColor: 'transparent', /* Fundo transparente (vazado) */
-                borderWidth: 2,                 /* Espessura da borda da bolinha */
+                borderColor: '#444444',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
                 type: 'scatter',
-                showLine: false, 
+                showLine: false,
                 tension: 0,
-                pointRadius: 5,                 /* Tamanho mais delicado */
+                pointRadius: 5,
                 pointHoverRadius: 7,
-                pointStyle: 'circle' 
+                pointStyle: 'circle'
             });
         }
 
         if (curvasAtivas.newtoniano) {
-            datasets.push({ label: 'Newtoniano', data: gerarLinhaTeoricaEspecifica('newtoniano'), borderColor: '#00a878', borderWidth: 2, type: 'line', pointRadius: 0, tension: 0.1, pointStyle: 'line' });
+            datasets.push({ label: 'Newtoniano', data: gerarLinhaTeoricaEspecifica('newtoniano', paramsModelos, taxaMaximaLida), borderColor: '#00a878', borderWidth: 2, type: 'line', pointRadius: 0, tension: 0.1, pointStyle: 'line' });
         }
         if (curvasAtivas.bingham) {
-            datasets.push({ label: 'Bingham', data: gerarLinhaTeoricaEspecifica('bingham'), borderColor: '#f5a623', borderWidth: 2, type: 'line', pointRadius: 0, tension: 0.1, pointStyle: 'line' });
+            datasets.push({ label: 'Bingham', data: gerarLinhaTeoricaEspecifica('bingham', paramsModelos, taxaMaximaLida), borderColor: '#f5a623', borderWidth: 2, type: 'line', pointRadius: 0, tension: 0.1, pointStyle: 'line' });
         }
         if (curvasAtivas.powerlaw) {
-            datasets.push({ label: 'Power-law', data: gerarLinhaTeoricaEspecifica('powerlaw'), borderColor: '#e12d2d', borderWidth: 2, type: 'line', pointRadius: 0, tension: 0.1, pointStyle: 'line' });
+            datasets.push({ label: 'Power-law', data: gerarLinhaTeoricaEspecifica('powerlaw', paramsModelos, taxaMaximaLida), borderColor: '#e12d2d', borderWidth: 2, type: 'line', pointRadius: 0, tension: 0.1, pointStyle: 'line' });
         }
         if (curvasAtivas.hb) {
-            datasets.push({ label: 'Herschel-Bulkley', data: gerarLinhaTeoricaEspecifica('hb'), borderColor: '#001ee1', borderWidth: 2, type: 'line', pointRadius: 0, tension: 0.1, pointStyle: 'line' });
+            datasets.push({ label: 'Herschel-Bulkley', data: gerarLinhaTeoricaEspecifica('hb', paramsModelos, taxaMaximaLida), borderColor: '#001ee1', borderWidth: 2, type: 'line', pointRadius: 0, tension: 0.1, pointStyle: 'line' });
         }
 
         graficoReologia = new Chart(ctx, {
             data: { datasets: datasets },
-            options: {
-                scales: {
-                    x: { type: escalaX, title: { display: true, text: 'Taxa de Cisalhamento (s⁻¹)', font: {weight: 'bold'} } },
-                    y: { type: escalaY, title: { display: true, text: 'Tensão de Cisalhamento (Pa)', font: {weight: 'bold'} } }
-                },
-                plugins: { 
-                    legend: { 
-                        position: 'top', 
-                        align: 'start',
-                        labels: {
-                            usePointStyle: true,
-                            boxWidth: 15, 
-                            boxHeight: 8,
-                            padding: 25   
-                        }
-                    } 
-                }
-            },
-            plugins: [{
-                beforeInit: function(chart) {
-                    const ajusteOriginal = chart.legend.fit;
-                    chart.legend.fit = function fit() {
-                        ajusteOriginal.bind(chart.legend)();
-                        this.height += 30; 
-                    };
-                }
-            }]
+            options: criarOpcoesGrafico(escalaX, escalaY),
+            plugins: [pluginEspacoLegenda]
         });
     }
 
@@ -776,120 +1506,310 @@
             document.getElementById('btn-x-linear').classList.toggle('ativo', tipo === 'linear');
             document.getElementById('btn-x-logarithmic').classList.toggle('ativo', tipo === 'logarithmic');
         }
+
         if (eixo === 'y') {
             escalaY = tipo;
             document.getElementById('btn-y-linear').classList.toggle('ativo', tipo === 'linear');
             document.getElementById('btn-y-logarithmic').classList.toggle('ativo', tipo === 'logarithmic');
         }
+
         atualizarGraficoComCurvas();
+    }
+
+    function obterCorComparativa(indice) {
+        return CORES_COMPARATIVO[indice % CORES_COMPARATIVO.length];
+    }
+
+    function renderizarTabelaComparativa() {
+        garantirEstadoComparativo();
+
+        let cabecalho = '<tr><th>RPM</th>';
+        for (let i = 0; i < quantidadeAmostrasComparativas; i++) {
+            cabecalho += `<th><span class="rotulo-amostra"><span class="marcador-cor" style="background-color: ${obterCorComparativa(i)};"></span>Amostra ${i + 1}</span></th>`;
+        }
+        cabecalho += '</tr>';
+
+        let corpo = '';
+        rotacoesAtuais.forEach((rpm) => {
+            corpo += `<tr><td><strong>${formatarRpm(rpm)}</strong></td>`;
+            for (let i = 0; i < quantidadeAmostrasComparativas; i++) {
+                let valor = leiturasComparativas[i][rpm.toString()] || '';
+                corpo += `<td><input type="number" placeholder="-" value="${valor}" oninput="atualizarLeituraComparativa(${i}, '${rpm.toString()}', this.value)"></td>`;
+            }
+            corpo += '</tr>';
+        });
+
+        document.getElementById('cabecalhoComparativo').innerHTML = cabecalho;
+        document.getElementById('corpoComparativo').innerHTML = corpo;
+        calcularComparativo();
+    }
+
+    function atualizarLeituraComparativa(indiceAmostra, rpm, valor) {
+        leiturasComparativas[indiceAmostra][rpm] = valor;
+        calcularComparativo();
+    }
+
+    function adicionarAmostraComparativa() {
+        if (quantidadeAmostrasComparativas >= 8) {
+            alert('Limite maximo de 8 amostras no comparativo.');
+            return;
+        }
+
+        quantidadeAmostrasComparativas += 1;
+        garantirEstadoComparativo();
+        renderizarTabelaComparativa();
+    }
+
+    function removerAmostraComparativa() {
+        if (quantidadeAmostrasComparativas <= 1) {
+            alert('E necessario manter pelo menos uma amostra.');
+            return;
+        }
+
+        quantidadeAmostrasComparativas -= 1;
+        garantirEstadoComparativo();
+        renderizarTabelaComparativa();
+    }
+
+    function construirLinhaResultadosComparativos(modelo, indiceAmostra, pontosValidos, analise) {
+        let status = 'Sem dados';
+        let classeStatus = 'status-alerta';
+
+        if (pontosValidos.length > 0 && pontosValidos.length < 5) {
+            status = 'Min. 5 pontos validos';
+        } else if (pontosValidos.length >= 5 && analise.valido) {
+            status = 'OK';
+            classeStatus = 'status-ok';
+        }
+
+        let estatistica = analise.valido ? analise.stats[modelo] : criarEstatisticaInvalida();
+
+        return {
+            amostra: indiceAmostra + 1,
+            cor: obterCorComparativa(indiceAmostra),
+            pontos: pontosValidos.length,
+            status: status,
+            classeStatus: classeStatus,
+            params: analise.valido ? analise.params : criarParametrosVazios(),
+            stats: estatistica
+        };
+    }
+
+    function renderizarResultadosComparativos(modelo, linhasResultados) {
+        let definicaoModelo = DEFINICOES_MODELOS[modelo];
+        let cabecalho = '<tr><th>Amostra</th><th>Pontos válidos</th>';
+
+        definicaoModelo.parametros.forEach((parametro) => {
+            cabecalho += `<th>${parametro.titulo}</th>`;
+        });
+
+        cabecalho += '<th>R&sup2;</th><th>R&sup2; Ajustado</th><th>AICc</th><th>Status</th></tr>';
+
+        let corpo = '';
+        linhasResultados.forEach((linha) => {
+            corpo += `<tr>
+                <td><span class="rotulo-amostra"><span class="marcador-cor" style="background-color: ${linha.cor};"></span>Amostra ${linha.amostra}</span></td>
+                <td>${linha.pontos}</td>`;
+
+            definicaoModelo.parametros.forEach((parametro) => {
+                let valor = linha.status === 'OK' ? formatarNumero(linha.params[parametro.chave], parametro.casas) : '-';
+                corpo += `<td>${valor}</td>`;
+            });
+
+            corpo += `
+                <td>${linha.status === 'OK' ? formatarNumero(linha.stats.r2, 4) : '-'}</td>
+                <td>${linha.status === 'OK' ? formatarNumero(linha.stats.r2Adj, 4) : '-'}</td>
+                <td>${linha.status === 'OK' ? formatarNumero(linha.stats.aicc, 2) : '-'}</td>
+                <td class="${linha.classeStatus}">${linha.status}</td>
+            </tr>`;
+        });
+
+        document.getElementById('cabecalhoResultadosComparativos').innerHTML = cabecalho;
+        document.getElementById('corpoResultadosComparativos').innerHTML = corpo;
+    }
+
+    function atualizarGraficoComparativo() {
+        let ctx = document.getElementById('graficoComparativo').getContext('2d');
+        if (graficoComparativo) graficoComparativo.destroy();
+
+        graficoComparativo = new Chart(ctx, {
+            data: { datasets: datasetsComparativosAtuais },
+            options: criarOpcoesGrafico(escalaComparativaX, escalaComparativaY),
+            plugins: [pluginEspacoLegenda]
+        });
+    }
+
+    function calcularComparativo() {
+        garantirEstadoComparativo();
+
+        let modelo = document.getElementById('modeloComparativo').value;
+        document.getElementById('resumoModeloComparativo').innerText = `Modelo ativo: ${obterRotuloModelo(modelo)}`;
+
+        let linhasResultados = [];
+        let datasets = [];
+        let temLeitura = false;
+        let temAmostraValida = false;
+        let temAmostraIncompleta = false;
+
+        for (let i = 0; i < quantidadeAmostrasComparativas; i++) {
+            let pontosValidos = coletarPontosValidosComparativos(i);
+            let pontosOrdenados = pontosValidos.slice().sort((a, b) => a.taxa - b.taxa);
+
+            if (pontosValidos.length > 0) {
+                temLeitura = true;
+                datasets.push({
+                    label: `Amostra ${i + 1} - Dados`,
+                    data: pontosOrdenados.map((ponto) => ({ x: ponto.taxa, y: ponto.tensao })),
+                    borderColor: obterCorComparativa(i),
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    type: 'scatter',
+                    showLine: false,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointStyle: 'circle'
+                });
+            }
+
+            let analise = analisarPontos(pontosValidos);
+
+            if (analise.valido) {
+                temAmostraValida = true;
+                datasets.push({
+                    label: `Amostra ${i + 1} - ${obterRotuloModelo(modelo)}`,
+                    data: gerarLinhaTeoricaEspecifica(modelo, analise.params, analise.taxaMaxima),
+                    borderColor: obterCorComparativa(i),
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [8, 4],
+                    type: 'line',
+                    pointRadius: 0,
+                    tension: 0.1,
+                    pointStyle: 'line'
+                });
+            } else if (pontosValidos.length > 0) {
+                temAmostraIncompleta = true;
+            }
+
+            linhasResultados.push(construirLinhaResultadosComparativos(modelo, i, pontosValidos, analise));
+        }
+
+        datasetsComparativosAtuais = datasets;
+        renderizarResultadosComparativos(modelo, linhasResultados);
+        atualizarGraficoComparativo();
+
+        let avisoComparativo = document.getElementById('avisoComparativo');
+        let notaComparativo = document.getElementById('notaComparativo');
+
+        if (!temLeitura) {
+            avisoComparativo.innerText = 'Preencha as leituras para comparar as curvas.';
+            avisoComparativo.style.display = 'block';
+        } else if (!temAmostraValida) {
+            avisoComparativo.innerText = 'Cada amostra precisa de pelo menos 5 pontos válidos para gerar o fitting comparativo.';
+            avisoComparativo.style.display = 'block';
+        } else {
+            avisoComparativo.style.display = 'none';
+        }
+
+        if (temAmostraValida && temAmostraIncompleta) {
+            notaComparativo.innerText = 'Amostras com menos de 5 pontos válidos aparecem no grafico apenas com os dados lidos e sem parametros de fitting.';
+            notaComparativo.style.display = 'block';
+        } else {
+            notaComparativo.innerText = '';
+            notaComparativo.style.display = 'none';
+        }
+    }
+
+    function mudarEscalaComparativa(eixo, tipo) {
+        if (eixo === 'x') {
+            escalaComparativaX = tipo;
+            document.getElementById('btn-comp-x-linear').classList.toggle('ativo', tipo === 'linear');
+            document.getElementById('btn-comp-x-logarithmic').classList.toggle('ativo', tipo === 'logarithmic');
+        }
+
+        if (eixo === 'y') {
+            escalaComparativaY = tipo;
+            document.getElementById('btn-comp-y-linear').classList.toggle('ativo', tipo === 'linear');
+            document.getElementById('btn-comp-y-logarithmic').classList.toggle('ativo', tipo === 'logarithmic');
+        }
+
+        atualizarGraficoComparativo();
     }
 
     function exportarExcel() {
         let dadosBrutos = [];
-        
+
         rotacoesAtuais.forEach((rpm) => {
-            let idCampo = 'L' + rpm.toString().replace('.', '_');
+            let idCampo = 'L' + rpmParaId(rpm);
             let valorTexto = document.getElementById(idCampo).value;
-            
-            if (valorTexto !== "" && Number(valorTexto) > 0) {
+
+            if (valorTexto !== '' && Number(valorTexto) > 0) {
                 let leitura = Number(valorTexto);
                 let taxa = rpm * FATOR_TAXA;
                 let tensao = leitura * FATOR_TENSAO_PA;
-                let viscosidade = tensao / taxa;
-                
+                let viscosidade = taxa === 0 ? 0 : tensao / taxa;
+
                 dadosBrutos.push({
-                    "Rotação (RPM)": rpm,
-                    "Leitura (Dial)": leitura,
-                    "Taxa de Cisalhamento [s⁻¹]": Number(taxa.toFixed(2)),
-                    "Tensão [Pa]": Number(tensao.toFixed(2)),
-                    "Viscosidade [Pa·s]": Number(viscosidade.toFixed(4))
+                    'Rotacao (RPM)': rpm,
+                    'Leitura (Dial)': leitura,
+                    'Taxa de Cisalhamento [s⁻¹]': Number(taxa.toFixed(2)),
+                    'Tensao [Pa]': Number(tensao.toFixed(2)),
+                    'Viscosidade [Pa.s]': Number(viscosidade.toFixed(4))
                 });
             }
         });
 
         if (dadosBrutos.length === 0) {
-            alert("Preencha alguns dados antes de exportar.");
+            alert('Preencha alguns dados antes de exportar.');
             return;
         }
 
         let getNum = (id) => {
             let val = Number(document.getElementById(id).innerText);
-            return isNaN(val) ? "-" : val;
+            return isNaN(val) ? '-' : val;
         };
-        let checarVencedor = (id) => document.getElementById(id).classList.contains('vencedor') ? "Vencedor" : "";
 
-        let dadosModelos = [
-            {
-                "Modelo": "Newtoniano",
-                "Status": checarVencedor('card-newtoniano'),
-                "R²": getNum('r2-newtoniano'),
-                "R² Ajustado": getNum('r2adj-newtoniano'),
-                "AICc": getNum('aicc-newtoniano'),
-                "μ [Pa·s]": getNum('resMu'),
-                "PV [Pa·s]": "-",
-                "YP [Pa]": "-",
-                "Índice (n)": "-",
-                "Consistência (K)": "-",
-                "Tensão Inic. (τ₀)": "-"
-            },
-            {
-                "Modelo": "Bingham Plástico",
-                "Status": checarVencedor('card-bingham'),
-                "R²": getNum('r2-bingham'),
-                "R² Ajustado": getNum('r2adj-bingham'),
-                "AICc": getNum('aicc-bingham'),
-                "μ [Pa·s]": "-",
-                "PV [Pa·s]": getNum('resPV'),
-                "YP [Pa]": getNum('resYP'),
-                "Índice (n)": "-",
-                "Consistência (K)": "-",
-                "Tensão Inic. (τ₀)": "-"
-            },
-            {
-                "Modelo": "Lei das Potências",
-                "Status": checarVencedor('card-powerlaw'),
-                "R²": getNum('r2-powerlaw'),
-                "R² Ajustado": getNum('r2adj-powerlaw'),
-                "AICc": getNum('aicc-powerlaw'),
-                "μ [Pa·s]": "-",
-                "PV [Pa·s]": "-",
-                "YP [Pa]": "-",
-                "Índice (n)": getNum('resN'),
-                "Consistência (K)": getNum('resK'),
-                "Tensão Inic. (τ₀)": "-"
-            },
-            {
-                "Modelo": "Herschel-Bulkley",
-                "Status": checarVencedor('card-hb'),
-                "R²": getNum('r2-hb'),
-                "R² Ajustado": getNum('r2adj-hb'),
-                "AICc": getNum('aicc-hb'),
-                "μ [Pa·s]": "-",
-                "PV [Pa·s]": "-",
-                "YP [Pa]": "-",
-                "Índice (n)": getNum('resNhb'),
-                "Consistência (K)": getNum('resKhb'),
-                "Tensão Inic. (τ₀)": getNum('resTau0')
-            }
+        let checarVencedor = (id) => document.getElementById(id).classList.contains('vencedor') ? 'RECOMENDADO' : '';
+
+        let layoutPersonalizado = [
+            ['RELATORIO DE ANALISE REOLOGICA - CERNN'],
+            [],
+            ['1. AVALIACAO ESTATISTICA', 'Newtoniano', 'Bingham Plastico', 'Lei das Potencias', 'Herschel-Bulkley'],
+            ['R2', getNum('r2-newtoniano'), getNum('r2-bingham'), getNum('r2-powerlaw'), getNum('r2-hb')],
+            ['R2 Ajustado', getNum('r2adj-newtoniano'), getNum('r2adj-bingham'), getNum('r2adj-powerlaw'), getNum('r2adj-hb')],
+            ['AICc', getNum('aicc-newtoniano'), getNum('aicc-bingham'), getNum('aicc-powerlaw'), getNum('aicc-hb')],
+            ['RESULTADO DO AJUSTE', checarVencedor('card-newtoniano'), checarVencedor('card-bingham'), checarVencedor('card-powerlaw'), checarVencedor('card-hb')],
+            [],
+            ['2. PARAMETROS CALCULADOS', 'Newtoniano', 'Bingham Plastico', 'Lei das Potencias', 'Herschel-Bulkley'],
+            ['Viscosidade (mu) [Pa.s]', getNum('resMu'), '-', '-', '-'],
+            ['Visc. Plastica (PV) [Pa.s]', '-', getNum('resPV'), '-', '-'],
+            ['Escoamento (YP) [Pa]', '-', getNum('resYP'), '-', '-'],
+            ['Indice de Fluxo (n)', '-', '-', getNum('resN'), getNum('resNhb')],
+            ['Consistencia (K) [Pa.s^n]', '-', '-', getNum('resK'), getNum('resKhb')],
+            ['Tensao Inicial (tau0) [Pa]', '-', '-', '-', getNum('resTau0')]
         ];
 
         let wsDados = XLSX.utils.json_to_sheet(dadosBrutos);
-        wsDados['!cols'] = [ { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 25 }, { wch: 20 } ];
+        wsDados['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 20 }];
 
-        let wsModelos = XLSX.utils.json_to_sheet(dadosModelos);
-        wsModelos['!cols'] = [
-            { wch: 20 }, { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, 
-            { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 18 }, { wch: 20 }
-        ];
+        let wsModelos = XLSX.utils.aoa_to_sheet(layoutPersonalizado);
+        wsModelos['!cols'] = [{ wch: 30 }, { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
 
         let wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, wsDados, "Dados Lidos");
-        XLSX.utils.book_append_sheet(wb, wsModelos, "Análise e Parâmetros");
-        
-        XLSX.writeFile(wb, "Relatorio_Reologia_CERNN.xlsx");
+        XLSX.utils.book_append_sheet(wb, wsDados, 'Dados Lidos');
+        XLSX.utils.book_append_sheet(wb, wsModelos, 'Analise e Parametros');
+
+        XLSX.writeFile(wb, 'Relatorio_Reologia_CERNN.xlsx');
     }
 
-    window.onload = mudarConfiguracaoEquip;
+    function inicializarPagina() {
+        garantirEstadoComparativo();
+        renderizarTabelaComparativa();
+        mostrarPagina('individual');
+        mudarConfiguracaoEquip();
+    }
+
+    window.onload = inicializarPagina;
 </script>
 
 </body>
